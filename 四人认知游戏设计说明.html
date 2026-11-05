@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>四个认知训练游戏 · 一页式设计说明</title>
+<style>
+ body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:#f4f7fc;color:#1f2933;}
+ header{background:linear-gradient(135deg,#7b4dff,#19b3a6);color:#fff;padding:26px 34px;}
+ header h1{margin:0 0 6px;font-size:22px;} header p{margin:0;opacity:.93;font-size:13px;max-width:980px;line-height:1.6;}
+ .wrap{max-width:1180px;margin:0 auto;padding:22px 20px 50px;}
+ .intro{background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:18px 22px;margin-bottom:20px;font-size:14px;color:#52606d;line-height:1.7;}
+ .card{background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:20px 24px;margin-bottom:22px;box-shadow:0 2px 10px rgba(20,40,80,.04);}
+ .chead{display:flex;align-items:center;gap:12px;border-bottom:1px solid #eef1f6;padding-bottom:10px;margin-bottom:14px;}
+ .chead h2{margin:0;font-size:18px;} .badge{background:#7b4dff;color:#fff;border-radius:8px;padding:3px 11px;font-weight:700;font-size:13px;}
+ .age{margin-left:auto;background:#eef3fb;color:#2f6fed;border:1px solid #d7e3fb;border-radius:20px;padding:2px 11px;font-size:12px;}
+ .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+ .field{background:#fbfdff;border:1px solid #e4e9f0;border-radius:10px;padding:12px 14px;}
+ .field h3{margin:0 0 6px;font-size:13.5px;color:#2f6fed;display:flex;align-items:center;gap:6px;}
+ .field p{margin:0;font-size:13.5px;color:#52606d;line-height:1.65;}
+ .full{grid-column:1 / -1;}
+ .tag{display:inline-block;background:#eafaf1;color:#2bb673;border:1px solid #bfe6cd;border-radius:6px;padding:1px 8px;font-size:12px;margin:2px 3px 2px 0;}
+ .warn{border-left:4px solid #e8833a;background:#fff8ef;padding:10px 14px;border-radius:8px;font-size:13px;color:#8a5a1e;margin-top:12px;}
+ .proto{background:#f7faff;border:1px solid #dce5f2;border-radius:14px;padding:20px 24px;margin-bottom:22px;}
+ .proto h2{border-left:5px solid #2f6fed;padding-left:11px;font-size:18px;margin:0 0 12px;}
+ pre{background:#0f172a;color:#e2e8f0;padding:13px 15px;border-radius:10px;overflow-x:auto;font-size:12px;line-height:1.5;}
+ ol,ul{font-size:13.5px;color:#52606d;line-height:1.7;}
+ li{margin:3px 0;}
+ .kbd{background:#eef3fb;border:1px solid #d7e3fb;border-radius:5px;padding:1px 7px;font-family:monospace;color:#1f4ea8;}
+ @media(max-width:780px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+<h1>四个认知训练游戏 · 一页式设计说明</h1>
+<p>面向 6–9 岁孤独症儿童 · 同一套九轴魔法棒交互 · 供本科生延伸开发。每游戏一页，固定 6 项：游戏目标 / 认知训练目标 / 操作方式 / 反馈 / 难度 / 记录指标。统一数据契约见文末。</p>
+</header>
+<div class="wrap">
+
+<div class="intro">
+<b>总原则：</b>游戏提供训练任务并记录行为表现，但<b>不能仅凭单 IMU 运动数据声称证明了</b>注意力/记忆/社交等认知能力改善——效果仍需合适的任务指标与后续评估。儿童游戏是你的<b>应用验证场景</b>，IMU 研究主线（Calibration → Motion State → Qa/Qm → Adaptive Fusion）不变。<br>
+<b>统一交互映射（供四个游戏复用）：</b>
+<span class="tag">Roll → 左右</span><span class="tag">Pitch → 前后</span><span class="tag">Yaw → 水平旋转/指向</span><span class="tag">Shake → 确认/施法</span><span class="tag">Static → 稳定/等待</span>
+</div>
+
+<!-- ============ 游戏1 ============ -->
+<div class="card">
+ <div class="chead"><span class="badge">游戏1</span><h2>星星平衡岛</h2><span class="age">感知与动作协调</span></div>
+ <div class="grid">
+  <div class="field"><h3>🎯 游戏目标</h3><p>倾斜魔法棒，控制小球/飞船沿指定路线前进，避开障碍，最终到达终点收集星星。</p></div>
+  <div class="field"><h3>🧠 认知训练目标</h3><p><b>感知与动作协调、视觉-运动协调、操作稳定性。</b><br><span class="warn" style="display:inline-block;margin-top:6px;">注意：单手持棒主要评价手部姿态控制与操作稳定性，<b>不等同于</b>直接评价全身姿势平衡。</span></p></div>
+  <div class="field"><h3>🕹 操作方式</h3><p>Roll/Pitch 控制移动方向；Ax/Ay/Az 可判断运动平稳性。倾斜越大移动越快（灵敏度可调）。</p></div>
+  <div class="field"><h3>🎉 反馈</h3><p>到达终点 → 星星/小红花特效+音效；碰到障碍 → 温和提示并回退/重来；顶部实时进度条与剩余时间。</p></div>
+  <div class="field"><h3>📶 难度</h3><p>路线复杂度、障碍密度、限时长短、移动灵敏度分级（4 档）。支持提示/暂停，避免强制倒计时。</p></div>
+  <div class="field"><h3>📊 记录指标</h3><p>完成时间、偏离目标次数、运动平稳性（加速度方差）、姿态变化范围、完成率、碰障次数。</p></div>
+ </div>
+</div>
+
+<!-- ============ 游戏2 ============ -->
+<div class="card">
+ <div class="chead"><span class="badge">游戏2</span><h2>寻找魔法精灵</h2><span class="age">注意力</span></div>
+ <div class="grid">
+  <div class="field"><h3>🎯 游戏目标</h3><p>屏幕出现多个不同颜色的魔法精灵；系统提示"请找到蓝色精灵"，玩家旋转魔法棒控制指针/视角，找到目标并保持指向一定时间。</p></div>
+  <div class="field"><h3>🧠 认知训练目标</h3><p><b>选择性注意（从干扰中找目标）+ 持续注意（保持指向）。</b>具体采用哪种，由研究者定稿。</p></div>
+  <div class="field"><h3>🕹 操作方式</h3><p>Yaw 旋转控制指针/视角；Roll/Pitch 微调指向；Gyro 作为旋转参考。找到后 Shake 确认。</p></div>
+  <div class="field"><h3>🎉 反馈</h3><p>找到目标 → 高亮+音效；误选 → 温和提示；指向稳定计时环填充，满则成功。</p></div>
+  <div class="field"><h3>📶 难度</h3><p>干扰精灵数量、与目标相似度、需保持指向的时长、时间限制分级。</p></div>
+  <div class="field"><h3>📊 记录指标</h3><p>首次找到目标时间、误选次数、目标选择准确率、指向稳定性、任务完成时间。</p></div>
+ </div>
+</div>
+
+<!-- ============ 游戏3 ============ -->
+<div class="card">
+ <div class="chead"><span class="badge">游戏3</span><h2>帮助森林伙伴</h2><span class="age">社交情境理解</span></div>
+ <div class="grid">
+  <div class="field"><h3>🎯 游戏目标</h3><p>卡通伙伴出现情境（如：难过的小兔找不到玩具），给出 2–3 个简单选项，玩家倾斜/旋转选择，挥动魔法棒确认。</p></div>
+  <div class="field"><h3>🧠 认知训练目标</h3><p><b>基础社交线索识别与情境选择。</b><span class="warn" style="display:inline-block;margin-top:6px;">社交属性来自情境与选择<b>内容</b>，不是靠"挥动动作"产生；IMU 只承担交互输入角色。</span></p></div>
+  <div class="field"><h3>🕹 操作方式</h3><p>Roll/Pitch 或左右旋转在选项间移动光标；Shake 确认选择。选项用大图标+图形，少文字。</p></div>
+  <div class="field"><h3>🎉 反馈</h3><p>选择后伙伴表情变化；正确帮助 → 开心动画+星星；不当选择 → 温和引导而非惩罚。</p></div>
+  <div class="field"><h3>📶 难度</h3><p>选项数量（2→3）、情境复杂度、是否需要提示、是否限时分级。</p></div>
+  <div class="field"><h3>📊 记录指标</h3><p>选择结果、决策反应时、提示次数、完成率、重复尝试次数。</p></div>
+ </div>
+</div>
+
+<!-- ============ 游戏4 ============ -->
+<div class="card">
+ <div class="chead"><span class="badge">游戏4</span><h2>魔法记忆森林</h2><span class="age">工作记忆</span></div>
+ <div class="grid">
+  <div class="field"><h3>🎯 游戏目标</h3><p>屏幕依次出现方向提示（如 左→右→前），玩家记住顺序后，依次移动魔法棒到对应方向节点完成动作。</p></div>
+  <div class="field"><h3>🧠 认知训练目标</h3><p><b>视觉序列记忆、顺序执行（工作记忆）。</b>是下面最小原型的实现对象。</p></div>
+  <div class="field"><h3>🕹 操作方式</h3><p>Roll（左右）/Pitch（前后）移动小球到方向节点；按展示顺序依次到达。可选 Shake 作为"确认一步"。</p></div>
+  <div class="field"><h3>🎉 反馈</h3><p>每步正确 → 节点亮起+音效；错误 → 该序列重来（不惩罚）；整序列完成 → 魔法特效+星星奖励。</p></div>
+  <div class="field"><h3>📶 难度</h3><p>序列长度（2→5）、方向数量、展示速度、节点间隔时间分级。</p></div>
+  <div class="field"><h3>📊 记录指标</h3><p>正确动作数、顺序正确率、每步反应时、提示依赖次数、重复次数、目标序列 vs 实际序列。</p></div>
+ </div>
+</div>
+
+<!-- ============ 最小原型 ============ -->
+<div class="proto">
+ <h2>附：记忆游戏最小 3D 原型（供本科延申）</h2>
+ <p>已提供两个 C# 脚本（<code>unity/MemoryGameMinimal/</code>）：<b>PlayerController.cs</b>（按 Roll/Pitch 移动小球，键盘模拟）+ <b>MemoryGame.cs</b>（序列展示→输入→判定→成功提示）。<b>暂用键盘模拟</b>，无需美术、无需真机即可跑。</p>
+ <p><b>场景搭建（2 分钟）：</b></p>
+ <ol>
+  <li>Unity 新建 3D（Built-in）工程，建 Scene，存为 <code>Game04_Memory.unity</code>。</li>
+  <li>Hierarchy：<code>Plane</code>（地面，缩放 2,1,2）、<code>Player</code>（Sphere，置于原点）、3 个 <code>Node</code>（Sphere，分别放左/右/前方向，例如 <code>(-3,0.5,0)</code>、<code>(3,0.5,0)</code>、<code>(0,0.5,-3)</code>），再建一个空物体 <code>GameManager</code>。</li>
+  <li>把 <code>PlayerController.cs</code> 挂到 Player；把 <code>MemoryGame.cs</code> 挂到 GameManager，并把 Player 与 3 个 Node 拖进对应字段。</li>
+  <li>Play：键盘 <span class="kbd">A</span>/<span class="kbd">D</span> = 左右(Roll)、<span class="kbd">W</span>/<span class="kbd">S</span> = 前后(Pitch)。先看序列高亮，再按顺序开到节点即判定。</li>
+ </ol>
+ <p><b>键盘 → 真机切换（延申点）：</b>PlayerController 里已留 <code>useIMU</code> 开关与注释；接真机时把 <code>IMUReceiver</code> 挂到场景，将 Player 上的 <code>roll/pitch</code> 来源改为 <code>IMUReceiver</code> 的 <code>latestRoll/latestPitch</code> 即可，游戏逻辑零改动。</p>
+ <p><b>事件记录（延申点）：</b>MemoryGame 在 TASK_START / SEQUENCE_SHOW / STEP_CORRECT / SEQUENCE_COMPLETE 处打 Console 日志；后续按统一契约经 UDP 回传 Python，写入 <code>game_event / task_id / trial_id / target / user_response / is_correct / reaction_time_ms</code>。</p>
+</div>
+
+<!-- ============ 数据契约 ============ -->
+<div class="card">
+ <div class="chead"><span class="badge">契约</span><h2>四个游戏统一数据契约（研究者定，学生不改）</h2></div>
+ <div class="grid">
+  <div class="field"><h3>IMU 字段</h3><p>device_id, timestamp, Ax Ay Az, Gx Gy Gz, Mx My Mz, roll pitch yaw, motion_state, source</p></div>
+  <div class="field"><h3>统一事件</h3><p>TASK_START / TARGET_SHOW / ACTION_START / ACTION_END / TASK_SUCCESS / TASK_FAILED / TASK_END</p></div>
+  <div class="field"><h3>认知指标</h3><p>task_id, trial_id, target, user_response, is_correct, reaction_time_ms</p></div>
+  <div class="field"><h3>⚠️ 磁场坑</h3><p>真机存的是 <code>mx_raw/my_raw/mz_raw</code>（原始计数，非 µT）。Unity 接口须带单位说明；模拟器不要假装自己是 µT，避免真假数据语义不一致。</p></div>
+ </div>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>本科生任务安排 · 九轴游戏化多运动状态数据采集系统</title>
+<style>
+ body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:#f4f7fc;color:#1f2933;}
+ header{background:linear-gradient(135deg,#2f6fed,#19b3a6);color:#fff;padding:26px 34px;}
+ header h1{margin:0 0 6px;font-size:22px;} header p{margin:0;opacity:.93;font-size:13px;max-width:940px;line-height:1.6;}
+ .wrap{max-width:1160px;margin:0 auto;padding:24px 20px 50px;}
+ section{background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:22px 26px;margin-bottom:20px;box-shadow:0 2px 10px rgba(20,40,80,.04);}
+ h2{font-size:19px;margin:0 0 12px;padding-left:11px;border-left:5px solid #2f6fed;}
+ h3{font-size:16px;color:#33415c;margin:16px 0 6px;}
+ p,li{font-size:14.5px;color:#52606d;line-height:1.7;}
+ .key{background:#eef3fb;color:#2f6fed;border:1px solid #d7e3fb;border-radius:20px;padding:2px 11px;font-size:12px;display:inline-block;margin:2px 4px 2px 0;}
+ table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;}
+ th,td{border:1px solid #e4e9f0;padding:9px 11px;text-align:left;vertical-align:top;}
+ th{background:#eef3fb;}
+ pre{background:#0f172a;color:#e2e8f0;padding:14px 16px;border-radius:10px;overflow-x:auto;font-size:12.5px;line-height:1.5;}
+ .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0;}
+ .flow .node{background:#2f6fed;color:#fff;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;}
+ .flow .node.g{background:#19b3a6;} .flow .node.p{background:#7b4dff;}
+ .flow .arr{color:#2f6fed;font-weight:700;font-size:18px;}
+ .note{background:#fff8ef;border:1px solid #f3d9b0;border-radius:10px;padding:12px 16px;font-size:14px;color:#8a5a1e;margin:10px 0;}
+ .ok{color:#2bb673;font-weight:700;} .warn{color:#e8833a;font-weight:700;} .bad{color:#e8533a;font-weight:700;}
+ .wk{background:#fff4e6;border:1px solid #f3d9b0;border-radius:10px;padding:14px 18px;margin:12px 0;}
+ code{background:#eef3fb;padding:1px 6px;border-radius:5px;font-size:13px;color:#1f4ea8;}
+ .p0{background:#eafaf1;color:#2bb673;border:1px solid #bfe6cd;border-radius:6px;padding:1px 8px;font-size:12px;}
+ .p1{background:#eef3fb;color:#2f6fed;border:1px solid #d7e3fb;border-radius:6px;padding:1px 8px;font-size:12px;}
+ .p2{background:#f4f5f7;color:#8a94a6;border:1px solid #dfe3ea;border-radius:6px;padding:1px 8px;font-size:12px;}
+</style></head><body>
+<header><h1>本科生任务安排 · 九轴游戏化多运动状态数据采集系统</h1>
+<p>游戏名《魔法岛大冒险》；系统定位：基于九轴 IMU 的儿童游戏化多运动状态数据采集系统。架构 <b>WT901 → Python（数据层）→ Unity（游戏层）</b>：你负责九轴接入/通信/解析/保存，本科生只负责 Unity 游戏交互与事件回传。本科生搭的是<b>真实人体 IMU 数据采集基础设施</b>，算法（Qa/Qm/融合）归你。</p></header>
+<div class="wrap">
+
+<section><h2>1. 三层架构（职责分工的核心）</h2>
+<div class="flow">
+ <span class="node p">Sensor Layer<br>WT901WIFI</span><span class="arr">→</span>
+ <span class="node p">Research / Data Layer<br>Python（你负责）</span><span class="arr">→</span>
+ <span class="node g">Game Layer<br>Unity（本科生）</span>
+</div>
+<table>
+<tr><th>层</th><th>负责方</th><th>职责</th></tr>
+<tr><td>Sensor</td><td>硬件</td><td>WT901WIFI 九轴输出</td></tr>
+<tr><td><b>Research / Data（Python）</b></td><td><span class="ok">你</span></td><td>通信、协议解析、时间戳、原始 IMU、姿态角、<b>科研数据主记录（CSV）</b>、状态/事件同步、后续可加滤波与质量指标、UDP 输出给 Unity。含模拟器（SIM 模式）。</td></tr>
+<tr><td><b>Game（Unity）</b></td><td><span class="warn">本科生</span></td><td>游戏场景、角色、动画、计分、反馈、任务状态机；接收 Python 数据；把 game_event 回传 Python。</td></tr>
+</table>
+<div class="note">⚠️ <b>Python 是科研数据主记录器，Unity 不是。</b> Unity 掉帧/卡顿/场景加载都不应影响九轴原始采集。最终 CSV 由 Python 落盘，Unity 只回传事件。</div>
+</section>
+
+<section><h2>2. 数据流与双向通信</h2>
+<pre>                ┌── WT901 Reader ──┐
+                │                  │
+Input Mode ─────┤                  ├→ Unified IMU JSON → UDP:5005 → Unity
+                │                  │                     └→ CSV (Python 主记录)
+                └── Simulator ─────┘
+                                         ↑
+                              UDP:5006 ← Unity 回传 game_event</pre>
+<ul>
+<li><b>Python → Unity</b>：每帧统一 JSON（roll/pitch/yaw/ax…/motion_state/source），50 Hz。</li>
+<li><b>Unity → Python</b>：瞬时事件 <code>{"event":...,"task_id":...,"trial_id":...}</code> 回传，Python 写入同一 CSV。</li>
+<li>Unity <b>永远不关心</b> source 是 SIM 还是 REAL，只取 roll/pitch/yaw/加速度做游戏。</li>
+</ul>
+</section>
+
+<section><h2>3. 四个核心实验阶段（覆盖 5 类运动状态）</h2>
+<p>不再做"5 个独立游戏/5 个场景"。整个游戏就是<b>一个魔法岛 + 4 个任务区域</b>，只改变提示与控制方式，不切完全不同的美术与逻辑。本科生只需维护：一套角色、一个地图、一个 IMU 管理器、一个数据记录器、一个任务状态机。</p>
+<table>
+<tr><th>阶段</th><th>儿童动作</th><th>科研变量</th><th>motion_state</th><th>对应原方案</th></tr>
+<tr><td>Task 1 风之谷（倾斜）</td><td>前后左右倾斜魔杖</td><td>Roll / Pitch、重力分量</td><td>TILT</td><td>A 倾斜迷宫</td></tr>
+<tr><td>Task 2 迷雾灯塔（旋转）</td><td>绕竖轴左右转魔杖</td><td>Yaw、Gz、航向漂移</td><td>ROTATE</td><td>B 旋转驾驶</td></tr>
+<tr><td>Task 3 巨石林（动态）</td><td>上/下/左/右/摇（标准化幅度）</td><td>高频 Acc/Gyro、高动态</td><td>SHAKE</td><td>C 节奏摇晃</td></tr>
+<tr><td>Task 4 水晶洞（空间+静态）</td><td>走 P0→P1→P2→P3→P0，每点静止 2 s</td><td>Mag/位置/空间相关性、返回恢复</td><td>MOVE + STATIC</td><td>E 魔法寻宝</td></tr>
+</table>
+<div class="note">📌 <b>静态（STATIC）不单独成任务</b>：嵌入 Task 1 末尾（"能量补充，保持不动 3 秒"）与 Task 4 各定点（静止 2 s）。于是 <b>4 Tasks → 5 Motion States</b>：TILT → ROTATE → SHAKE → STATIC → SPATIAL/MAG。</div>
+</section>
+
+<section><h2>4. 数据格式约定（必须定死）</h2>
+<p>Python 主记录 CSV 表头（每行一帧）：</p>
+<pre>frame_id, device_timestamp_ms, host_timestamp_ms,
+ax,ay,az, gx,gy,gz, mx,my,mz,
+roll,pitch,yaw,
+motion_state, phase,
+event, task_id, trial_id, source</pre>
+<ul>
+<li><b>frame_id</b>：帧序号，查丢包用（Loss = N_expected − N_received）。</li>
+<li><b>device_timestamp_ms / host_timestamp_ms</b>：设备侧（若有）与主机侧时间戳，可研究 WiFi 延迟与同步。</li>
+<li><b>motion_state / phase</b>：<b>连续状态标签</b>（TILT/ROTATE/SHAKE/STATIC/MOVE），比 event 更重要，是 Qa/Qm 的核心输入。</li>
+<li><b>event</b>：<b>瞬时事件</b>（TASK_START、GATE_PASS、STATIC_OK、ZONE_P1、TASK_END…），来自 Unity 回传。</li>
+<li><b>trial_id</b>：同一被试重复次数（trial_01/02/03）。<b>source</b>：SIM_AUTO / SIM_KEYBOARD / WT901，一眼区分真假数据。</li>
+<li>采样率目标 ≥ 50 Hz（以实际输出为准）。</li>
+</ul>
+<table>
+<tr><th>event（瞬时）</th><th>触发</th><th>task_id</th></tr>
+<tr><td>SESSION_START / SESSION_END</td><td>开始/结束采集</td><td>0</td></tr>
+<tr><td>TASK1_START, TILT_FLY, GATE_PASS, TASK1_END</td><td>进山谷/飞行/过星门/完成</td><td>1</td></tr>
+<tr><td>TASK2_START, ROTATE_NAV, ROCK_DODGE, LIGHTHOUSE_REACH, TASK2_END</td><td>出海/转向/避礁/到灯塔</td><td>2</td></tr>
+<tr><td>TASK3_START, SWING_UP/DOWN/LEFT/RIGHT/SHAKE, BOULDER_SMASH, TASK3_END</td><td>动作提示/击碎</td><td>3</td></tr>
+<tr><td>TASK4_START, MOVE_TO_P1/P2/P3, STILL_2S, RETURN_P0, TASK4_END</td><td>移动/静止2秒/返回</td><td>4</td></tr>
+</table>
+</section>
+
+<section><h2>5. 验收标准：Motion State Coverage</h2>
+<p class="note">统一验收对象为<b>运动状态覆盖度</b>，不是"游戏数量"。必须完成 <b>4 个核心阶段</b>，并覆盖至少 5 类运动状态：倾斜、旋转、高动态、静态、空间/磁场变化。本科生问"做 4 个算完还是 5 个"——答案是看覆盖度。</p>
+</section>
+
+<section><h2>6. 优先级（避免本科生沉迷美术/登录页）</h2>
+<table>
+<tr><th>等级</th><th>内容</th></tr>
+<tr><td><span class="p0">P0 必须</span></td><td>Unity 接收 Python 数据；roll/pitch/yaw 控制角色；四类任务玩法；原始九轴驱动交互；motion_state 判断；event 回传；≥50Hz 流畅。</td></tr>
+<tr><td><span class="p1">P1 应做</span></td><td>child_id / trial_id 输入；任务选择；数据文件按 ID/ trial 自动命名；简单计分与反馈。</td></tr>
+<tr><td><span class="p2">P2 有空再做</span></td><td>登录注册、漂亮后台、历史记录可视化、排行榜、家长报告。</td></tr>
+</table>
+</section>
+
+<section><h2>7. 开发周期（建议 6–8 周）</h2>
+<table>
+<tr><th>周</th><th>内容</th><th>负责</th></tr>
+<tr><td>W1</td><td>你：WT901 读取/解析；发模拟器 v0.1 给本科生</td><td>你</td></tr>
+<tr><td>W2</td><td>本科生：Unity 接 UDP、3D 姿态方块、按键映射跑通</td><td>本科</td></tr>
+<tr><td>W3</td><td>Task 1 倾斜</td><td>本科</td></tr>
+<tr><td>W4</td><td>Task 2 旋转</td><td>本科</td></tr>
+<tr><td>W5</td><td>Task 3 动态</td><td>本科</td></tr>
+<tr><td>W6</td><td>Task 4 空间/静态（含静止检测）</td><td>本科</td></tr>
+<tr><td>W7</td><td>motion_state / event 标签 + child_id/trial_id</td><td>本科</td></tr>
+<tr><td>W8</td><td>联调、真机（SIM→REAL 切换）、数据样例</td><td>共同</td></tr>
+</table>
+<p>注：若已有 Unity 模板可缩短；W2 之前本科生完全用<b>模拟器</b>开发，不依赖真机。</p>
+</section>
+
+<section><h2>8. 模拟数据模式（关键：本科生不等 WT901 也能开发）</h2>
+<p>你已决定采用 <b>Python 模拟器</b>：Unity 永远不知道数据是 SIM 还是 REAL，统一 JSON over UDP。切换真机只需把 <code>produce_packet()</code> 换成 WT901 解析结果，Unity 零改动。</p>
+<table>
+<tr><th>模式</th><th>说明</th><th>用途</th></tr>
+<tr><td>SIM_AUTO</td><td>自动循环 TILT→ROTATE→SHAKE→STATIC 标准波形</td><td>回归调试，每次输入一致</td></tr>
+<tr><td>SIM_KEYBOARD</td><td>A/D=roll, W/S=pitch, Q/E=yaw, 空格=shake</td><td>本科生手动测试游戏手感</td></tr>
+<tr><td>REAL</td><td>换成 WT901 实测（你实现后切 MODE）</td><td>真机采集</td></tr>
+</table>
+<p>已提供两份可直接运行的文件：</p>
+<ul>
+<li><code>imu_simulator_v01.py</code> —— Python 模拟器（自动 + 键盘两模式，含回传接收与 CSV 主记录）。运行：<code>python imu_simulator_v01.py</code> 或加 <code>KEYBOARD</code>。</li>
+<li><code>unity/IMUReceiver.cs</code> —— Unity 接收/回传脚本，挂到空 GameObject 即可；游戏脚本读 <code>latest.roll/pitch/yaw</code>，状态机调 <code>SendEvent("GATE_PASS", 1)</code>。</li>
+</ul>
+<div class="note">⚠️ 模拟器只解决"没传感器时游戏也能开发"，<b>不模拟</b> gyro bias / hard-iron / 噪声 / 温漂 / 磁扰 / 饱和——那些是你的科研问题。</div>
+</section>
+
+<section><h2>9. 本科生与研究者边界（最终版）</h2>
+<table>
+<tr><th>类别</th><th>内容</th></tr>
+<tr><td><span class="ok">你负责</span></td><td>WT901 接入；Python 采集；统一数据接口；UDP 输出；科研数据保存；后续 Calibration → Qa/Qm → 磁扰检测 → 自适应融合 → 姿态评价 → Paper。</td></tr>
+<tr><td><span class="warn">本科生负责</span></td><td>Unity 场景/角色/动画；接收 Python 数据；roll/pitch/yaw 控制；任务状态机；游戏反馈；event 回传 Python；child_id/trial_id 录入。</td></tr>
+<tr><td><span class="bad">本科生不做</span></td><td>WT901 协议解析、磁力计处理、标定、Qa、Qm、自适应融合、EKF/VQF 修改、磁扰检测、论文算法。</td></tr>
+</table>
+</section>
+
+<section><h2>10. 给本科生的启动指令（可直接转发）</h2>
+<pre>第一步（用模拟器，不用等真机）：
+1. 装好 Unity（已完成）。
+2. 运行 python imu_simulator_v01.py KEYBOARD （会自动发 UDP 数据）。
+3. 在 Unity 挂上 IMUReceiver.cs，确认能收到 roll/pitch/yaw 并驱动一个方块旋转。
+4. 把 roll/pitch 映射到角色左右/上下移动，yaw 映射到转向。
+5. 用 SendEvent(...) 在关键节点回传事件（过星门、静止完成等）。
+跑通这步再做正式游戏场景（魔法岛 4 个任务区域）。</pre>
+</section>
+
+</div></body></html>

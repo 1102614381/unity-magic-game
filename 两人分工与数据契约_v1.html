@@ -1,0 +1,96 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>两人分工与数据契约 v1</title>
+<style>
+ body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:#f4f7fc;color:#1f2933;}
+ header{background:linear-gradient(135deg,#2f6fed,#7b4dff);color:#fff;padding:26px 32px;}
+ header h1{margin:0 0 6px;font-size:21px;} header p{margin:0;opacity:.93;font-size:13px;max-width:940px;line-height:1.6;}
+ .wrap{max-width:1000px;margin:0 auto;padding:22px 20px 46px;}
+ section{background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:20px 24px;margin-bottom:18px;box-shadow:0 2px 8px rgba(20,40,80,.04);}
+ h2{font-size:18px;margin:0 0 12px;padding-left:11px;border-left:5px solid #2f6fed;}
+ p,li{font-size:14.5px;color:#52606d;line-height:1.75;}
+ .key{background:#eafaf1;border:1px solid #bfe6cd;border-radius:10px;padding:12px 16px;font-size:14.5px;color:#1f6b46;line-height:1.7;}
+ .warn{background:#fdeef0;border:1px solid #f6c9cf;border-radius:10px;padding:12px 16px;font-size:14px;color:#a3333f;line-height:1.7;}
+ .rule{background:#fff8ef;border:1px solid #f3d9b0;border-radius:10px;padding:12px 16px;font-size:14px;color:#8a5a1e;line-height:1.7;}
+ table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;}
+ th,td{border:1px solid #e4e9f0;padding:9px 11px;text-align:left;vertical-align:top;}
+ th{background:#eef3fb;}
+ code{background:#eef3fb;border:1px solid #d7e3fb;border-radius:5px;padding:1px 7px;font-family:monospace;color:#1f4ea8;font-size:13px;}
+ pre{background:#0f172a;color:#e2e8f0;padding:12px 14px;border-radius:10px;overflow-x:auto;font-size:12.5px;line-height:1.5;}
+ .who{display:inline-block;background:#2f6fed;color:#fff;border-radius:7px;padding:2px 10px;font-size:12px;margin-right:6px;}
+ .who.b{background:#7b4dff;} .who.c{background:#19b3a6;}
+ .flow{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:12px 0;}
+ .flow .n{background:#2f6fed;color:#fff;border-radius:9px;padding:7px 11px;font-size:12.5px;font-weight:600;}
+ .flow .a{color:#2f6fed;font-weight:700;}
+</style></head><body>
+<header><h1>两人分工与数据契约 v1（转发给两位本科生）</h1>
+<p>项目：《魔法岛大冒险》九轴游戏化多运动状态 / 认知训练数据采集系统。本文件规定<b>工作模型、本周任务、统一数据契约、协作硬规则</b>。游戏具体玩法仍在与导师确认中，本周不要求做完整游戏。</p></header>
+<div class="wrap">
+
+<section><h2>一、工作模型（核心结论）</h2>
+<div class="key"><b>不是两个人共做一个游戏，也不是各做一个独立工程。</b>正确做法是：<b>一个共享 Unity 工程 + 彦祖先修框架 + 设计锁定后每人认领 2 个游戏</b>。
+<div class="flow">
+ <span class="n">同一 Unity 工程</span><span class="a">→</span>
+ <span class="n">彦祖搭框架(本周)</span><span class="a">→</span>
+ <span class="n">设计锁定</span><span class="a">→</span>
+ <span class="n">彦祖: 游戏1+2</span><span class="a">+</span>
+ <span class="n">同学: 游戏3+4</span>
+</div>
+</div>
+<p>四人（师姐 + 彦祖 + 另一同学）角色：</p>
+<table>
+<tr><th>角色</th><th>负责</th></tr>
+<tr><td><span class="who c">师姐(研究者)</span></td><td>总体设计、IMU 数据层(Python)、科研需求、统一接口与数据契约（本文件）</td></tr>
+<tr><td><span class="who">彦祖</span></td><td>Unity 主工程骨架、开始/被试/主菜单、IMU 接入壳、事件系统；设计锁定后做游戏1+2（连续姿态控制类）</td></tr>
+<tr><td><span class="who b">另一同学</span></td><td>四个游戏设计稿 + 1 个最小原型；设计锁定后做游戏3+4（离散状态/序列类）</td></tr>
+</table>
+<p><b>为什么这样分：</b>游戏1(平衡)、游戏2(注意力)都是<b>连续姿态控制</b>，Roll/Pitch/Yaw 平滑处理可复用；游戏3(社交)、游戏4(记忆)都是<b>离散状态/序列判断</b>，选项选择、动作确认、顺序记录可复用。按"连续 vs 离散"分组，代码复用最自然、工作量最均衡。</p>
+</section>
+
+<section><h2>二、本周任务（设计未定稿，只做框架+设计+2个原型）</h2>
+<p><span class="who">彦祖</span> <b>Unity 主工程框架 V0.1</b></p>
+<ul>
+ <li>建统一 Unity 工程（建议名 <code>MagicIsland_IMU_Game</code>），目录按 <code>Scenes / Scripts(Core,UI,IMU,Game) / Prefabs / Materials</code> 整理。</li>
+ <li>完成<b>开始界面</b>（《魔法岛大冒险》+ 开始/设置/退出）、<b>被试信息界面</b>（编号/年龄/游戏编号/trial/左右手/数据模式 SIM·REAL，无数据库，场景间传递即可）、<b>主菜单</b>（4 个游戏入口按钮，先跳统一测试场景）。</li>
+ <li>用 <code>IMUReceiver.cs</code> 正式验收：Python 模拟器 → UDP → Unity Cube 旋转（Roll→X, Pitch→Z, Yaw→Y）。</li>
+</ul>
+<p><span class="who b">另一同学</span> <b>认知游戏设计 + 1 个原型</b></p>
+<ul>
+ <li>围绕四个方向各写一页设计说明（游戏目标 / 认知训练目标 / 操作方式 / 反馈 / 难度 / 记录指标）。</li>
+ <li>做一个最小 3D 原型（建议记忆游戏）：小球/角色 + 按 Roll/Pitch 移动 + 到达终点判定 + 成功提示，暂用键盘模拟，不需美术。</li>
+</ul>
+<p><span class="who c">师姐</span> 本周定四游戏的认知训练目标细化 + 维护 Python 数据层与统一接口。</p>
+</section>
+
+<section><h2>三、统一数据契约（锁死，学生不得自行修改）</h2>
+<p><b>1) IMU 每帧字段（来自 Python，Unity 只读）：</b></p>
+<pre>device_id, timestamp,
+Ax Ay Az, Gx Gy Gz, Mx My Mz,   // 注意：Mx/My/Mz 真机为原始计数(raw)，非µT，接口须带单位说明
+roll pitch yaw,
+motion_state, source              // source: SIM / WT901</pre>
+<p><b>2) 统一游戏事件（Unity 经 UDP 回传 Python，每条带时间戳）：</b></p>
+<pre>TASK_START  TARGET_SHOW  ACTION_START  ACTION_END
+TASK_SUCCESS  TASK_FAILED  TASK_END</pre>
+<p><b>3) 认知任务指标（导师要求的"实际意义"落地处，必须记录）：</b></p>
+<pre>task_id, trial_id,
+target,            // 本次目标(如"蓝色精灵"/"左→右→前")
+user_response,     // 儿童实际选择/动作
+is_correct,        // 对错
+reaction_time_ms   // 反应时长</pre>
+<p class="rule">⚠️ 注意力：记"找对没、反应时"；社交：记"选了啥、提示几次"；记忆：记"目标序列 vs 实际序列、正确率"。否则只有九轴数据却无法关联认知任务表现。</p>
+</section>
+
+<section><h2>四、协作硬规则</h2>
+<ul>
+ <li><b>同一工程，Git 分支</b>：彦祖建主工程并初始化 Git；每人开自己的分支，禁止各建独立 Unity 工程。</li>
+ <li><b>统一接口</b>：所有游戏共用同一套 JSON 字段名、同一套 <code>event / motion_state</code> 命名，由师姐规定。</li>
+ <li><b>统一 UI 规范</b>：卡通风格、大按钮少文字、清晰图形/语音提示、星星/小红花正向反馈、难度可调；避免强制倒计时、强声刺激、频繁闪烁（孤独症儿童个体差异）。</li>
+ <li><b>不宣称认知疗效</b>：游戏可训练并记录行为，但<b>不得声称仅凭 IMU 数据证明了注意力/记忆/社交改善</b>——那是后续评估的事。</li>
+</ul>
+</section>
+
+<section><h2>五、研究边界提醒</h2>
+<div class="warn">儿童游戏是师姐 IMU 研究的<b>一个应用验证场景</b>，不是把研究方向转向认知训练算法。主线仍是 <code>Calibration → Motion State → Qa/Qm → Adaptive Fusion</code>。游戏最终要产出：<b>IMU 原始数据 + 认知任务 + 动作事件 + 任务表现</b> 四类可关联信息。</div>
+</section>
+
+</div></body></html>

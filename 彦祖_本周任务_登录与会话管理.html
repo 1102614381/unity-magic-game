@@ -1,0 +1,86 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>彦祖 · 本周任务（实验会话管理界面）</title>
+<style>
+ body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:#f4f7fc;color:#1f2933;}
+ header{background:linear-gradient(135deg,#2f6fed,#19b3a6);color:#fff;padding:26px 32px;}
+ header h1{margin:0 0 6px;font-size:21px;} header p{margin:0;opacity:.93;font-size:13px;max-width:920px;line-height:1.6;}
+ .wrap{max-width:980px;margin:0 auto;padding:22px 20px 46px;}
+ .info{background:#eafaf1;border:1px solid #bfe6cd;border-radius:12px;padding:14px 18px;margin:16px 0;font-size:14.5px;color:#1f6b46;line-height:1.7;}
+ .task{background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:16px 20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(20,40,80,.04);}
+ .th{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+ .badge{background:#2f6fed;color:#fff;border-radius:9px;padding:4px 12px;font-weight:700;font-size:14px;}
+ .th h3{margin:0;font-size:17px;} .time{margin-left:auto;background:#eef3fb;color:#2f6fed;border:1px solid #d7e3fb;border-radius:20px;padding:2px 12px;font-size:12px;}
+ .task ul{margin:6px 0 0;padding-left:20px;} .task li{font-size:14.5px;color:#52606d;line-height:1.75;}
+ code{background:#eef3fb;border:1px solid #d7e3fb;border-radius:5px;padding:1px 7px;font-family:monospace;color:#1f4ea8;font-size:13px;}
+ .note{background:#fff8ef;border:1px solid #f3d9b0;border-radius:10px;padding:12px 16px;font-size:14px;color:#8a5a1e;margin:14px 0;}
+ .warn{background:#fdeef0;border:1px solid #f6c9cf;border-radius:10px;padding:12px 16px;font-size:14px;color:#a3333f;margin:14px 0;}
+ pre{background:#0f172a;color:#e2e8f0;padding:12px 14px;border-radius:10px;overflow-x:auto;font-size:12.5px;line-height:1.5;}
+ .ok{color:#2bb673;font-weight:700;}
+</style></head><body>
+<header><h1>彦祖 · 本周任务（实验会话管理界面）</h1>
+<p>数据层已跑通（模拟器 UDP + Unity 接收就绪），本周在游戏内容最终确定前，先搭"实验会话管理"界面。注意：这不是给孩子用的华丽登录页，而是给实验员用的<b>被试与场次管理</b>。</p></header>
+<div class="wrap">
+
+<div class="info"><b>本周总目标：</b>做一个实验员用的开始界面——输入/选择被试编号、认知游戏、trial，点开始进入游戏；结束能把这些信息回传给 Python 并写进 CSV。界面用 Unity 默认 UI 控件即可，<b>不花时间做美术</b>。</div>
+
+<div class="task">
+ <div class="th"><span class="badge">任务 1</span><h3>理解"为什么现在做这个"</h3><span class="time">约半天</span></div>
+ <ul>
+  <li>重读 <code>九轴游戏项目说明.html</code> 的"六、最终数据流程"和"七、验收标准"。</li>
+  <li>理解：真实实验要区分<b>不同孤独症儿童被试</b>和<b>多次 trial</b>，所以需要在游戏开始前由实验员录入信息。这不是账号系统，是<b>实验会话管理</b>。</li>
+  <li>重点记住要落地的字段：<code>child_id</code>、<code>trial_id</code>、<code>task_id</code>。</li>
+ </ul>
+</div>
+
+<div class="task">
+ <div class="th"><span class="badge">任务 2</span><h3>搭实验员设置界面</h3><span class="time">约 1–2 天</span></div>
+ <ul>
+  <li>在 Unity 里新建一个 <b>开始/设置场景（Canvas + UI）</b>，包含：
+   <ul>
+    <li><b>被试编号</b> <code>child_id</code>：用下拉选择或数字输入（避免手输出错）。</li>
+    <li><b>选择认知游戏/任务</b> <code>task_id</code>：先留 4 个占位按钮（感知平衡 / 注意力 / 社交 / 记忆），后面接具体场景。</li>
+    <li><b>选择 trial</b> <code>trial_id</code>：trial_01 / 02 / 03 下拉。</li>
+    <li><b>「开始实验」按钮</b> → 进入游戏场景（本周先用之前那个会转的 Cube 占位）。</li>
+    <li><b>「结束并保存」按钮</b>。</li>
+   </ul>
+  </li>
+  <li>风格：大按钮、少文字、简洁即可（导师要求"减少操作步骤、流程化"）。</li>
+ </ul>
+</div>
+
+<div class="task">
+ <div class="th"><span class="badge">任务 3</span><h3>把会话信息回传 Python</h3><span class="time">约 1 天</span></div>
+ <ul>
+  <li>点「开始实验」时，把 <code>child_id / trial_id / task_id</code> 通过 <code>IMUReceiver.cs</code> 已有的回传通道（UDP 5006）发给 Python。</li>
+  <li>让 Python 把这些信息写进 CSV（表头或每帧都带），这样后面拿到的数据天然带被试和场次。</li>
+  <li>参考已有的事件回传写法，新增几个事件如 <code>SESSION_START</code>、<code>SELECT_TASK</code>。</li>
+ </ul>
+</div>
+
+<div class="task">
+ <div class="th"><span class="badge">任务 4</span><h3>最小流程 demo + 提交</h3><span class="time">约半天</span></div>
+ <ul>
+  <li>跑通流程：实验员填编号 → 选任务 → 开始 → 游戏场景（Cube 占位）→ 结束保存。</li>
+  <li>截图/录屏发给师姐确认。</li>
+ </ul>
+</div>
+
+<div class="warn">⚠️ <b>三个避坑：</b><br>
+① <b>不要做账号密码系统</b>——这是实验员前置设置，不是用户注册；<br>
+② <b>不要花一周做美术</b>——用 Unity 默认 UI 控件，先把功能跑通；<br>
+③ <b>游戏内容还没定</b>，所以界面要"可复用"：任务选择先留占位按钮，后面接具体场景时再替换，不要写死。</div>
+
+<div class="note">💡 <b>后续硬性要求（先记着，本周不做）：</b>导师要求游戏必须有<b>正向反馈</b>（得分 / 金币 / 小红花）和<b>流程化、少思考</b>的交互。这些是你之后做具体认知游戏时要满足的。</div>
+
+<div class="task">
+ <div class="th"><span class="badge">参考</span><h3>数据契约（每帧字段，来自项目说明）</h3></div>
+ <pre>frame_id, device_id, timestamp,
+Ax Ay Az, Gx Gy Gz, Mx My Mz,
+roll pitch yaw,
+motion_state, game_event, task_id, trial_id,
+child_id, zone</pre>
+ <p style="font-size:14px;color:#52606d;margin:8px 0 0;">本周新增落地的就是 <code>child_id / trial_id / task_id</code> 三列，由实验员界面录入、回传 Python。</p>
+</div>
+
+</div></body></html>

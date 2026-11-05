@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>彦祖 · 第一周任务清单（简单版）</title>
+<style>
+ body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:#f4f7fc;color:#1f2933;}
+ header{background:linear-gradient(135deg,#2f6fed,#19b3a6);color:#fff;padding:26px 32px;}
+ header h1{margin:0 0 6px;font-size:22px;} header p{margin:0;opacity:.93;font-size:13px;max-width:900px;line-height:1.6;}
+ .wrap{max-width:980px;margin:0 auto;padding:22px 20px 46px;}
+ .goal{background:#eafaf1;border:1px solid #bfe6cd;border-radius:12px;padding:14px 18px;margin:16px 0;font-size:15px;color:#1f6b46;}
+ .task{background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:16px 20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(20,40,80,.04);}
+ .th{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+ .badge{background:#2f6fed;color:#fff;border-radius:9px;padding:4px 12px;font-weight:700;font-size:14px;}
+ .th h3{margin:0;font-size:17px;} .time{margin-left:auto;background:#eef3fb;color:#2f6fed;border:1px solid #d7e3fb;border-radius:20px;padding:2px 12px;font-size:12px;}
+ .task ul{margin:6px 0 0;padding-left:20px;} .task li{font-size:14.5px;color:#52606d;line-height:1.7;}
+ code{background:#eef3fb;border:1px solid #d7e3fb;border-radius:5px;padding:1px 7px;font-family:monospace;color:#1f4ea8;font-size:13px;}
+ .note{background:#fff8ef;border:1px solid #f3d9b0;border-radius:10px;padding:12px 16px;font-size:14px;color:#8a5a1e;margin:14px 0;}
+ .warn{background:#fdeef0;border:1px solid #f6c9cf;border-radius:10px;padding:12px 16px;font-size:14px;color:#a3333f;margin:14px 0;}
+ ol.tips{font-size:14.5px;color:#52606d;line-height:1.8;}
+</style></head><body>
+<header><h1>彦祖 · 第一周任务清单（简单版）</h1>
+<p>目标：先跑通"数据层 → Unity → 一个会转的方块"这条链路。第一周<b>不做美术、不碰硬件、不急着做大场景</b>。</p></header>
+<div class="wrap">
+
+<div class="goal"><b>本周总目标：</b>Python 模拟器 → UDP → Unity 接收 → 一个 3D 方块随魔法棒姿态实时转动。整条链路跑通即可交差。</div>
+
+<div class="task">
+ <div class="th"><span class="badge">任务 1</span><h3>读文档 + 装环境</h3><span class="time">约半天</span></div>
+ <ul>
+  <li>打开师姐发的 <code>九轴游戏项目说明.html</code>，重点看<b>「四、游戏流程与四个任务」</b>和<b>「七、验收标准」</b>，理解你要做的 4 个任务：倾斜飞行 / 旋转导航 / 挥动魔法棒 / 空间磁场。</li>
+  <li>安装 <b>Unity（3D 模板）</b>和 <b>Python 3</b>（若已装则跳过）。</li>
+ </ul>
+</div>
+
+<div class="task">
+ <div class="th"><span class="badge">任务 2</span><h3>跑通模拟器（验证数据层）</h3><span class="time">约半天</span></div>
+ <ul>
+  <li>解压师姐发的 <code>3-jiuzhou-yyh-unity.zip</code>，找到里面的 Python 模拟器（<code>imu_simulator_v01.py</code>）。</li>
+  <li>在命令行运行它（默认 AUTO 模式）。确认本机 <code>127.0.0.1 : 5005</code> 在持续发送 JSON 数据包。</li>
+  <li>这一步是为了先确认<b>"数据层是好的"</b>，之后 Unity 端出问题就是 Unity 的事，排查更清晰。</li>
+ </ul>
+</div>
+
+<div class="task">
+ <div class="th"><span class="badge">任务 3</span><h3>新建 Unity 工程 + 主场景</h3><span class="time">约 1 天</span></div>
+ <ul>
+  <li>新建 3D 项目，命名 <b>《魔法岛大冒险》</b>。</li>
+  <li>建一个主场景，放：一个地面 <code>Plane</code> + 一个代表魔法棒/角色的基础 <code>Cube</code>/<code>Sphere</code>（<b>先不用美术模型</b>）。</li>
+  <li>加一个 UI <code>Text</code> 显示收到的 roll / pitch / yaw 数值（仅调试用，后面可删）。</li>
+ </ul>
+</div>
+
+<div class="task">
+ <div class="th"><span class="badge">任务 4</span><h3>接 IMU 数据 + 驱动方块</h3><span class="time">约 1 天</span></div>
+ <ul>
+  <li>把师姐给的 <code>IMUReceiver.cs</code> 挂到场景物体上，运行 Unity，确认能<b>实时收到</b> roll / pitch / yaw。</li>
+  <li>姿态映射（先用基础旋转即可）：<br>
+   <code>roll</code> → 绕 X 轴旋转；<code>pitch</code> → 绕 Z 轴旋转；<code>yaw</code> → 绕 Y 轴旋转。</li>
+  <li>让那个 Cube 随模拟器姿态转动。然后用<b>键盘模式</b>验证整条链路：<br>
+   <code>A/D</code> = roll 左右、<code>W/S</code> = pitch 前后、<code>Q/E</code> = yaw 左右、<code>空格</code> = shake、<code>R</code> = 回正。</li>
+ </ul>
+</div>
+
+<div class="task">
+ <div class="th"><span class="badge">任务 5</span><h3>提交最小可运行 demo</h3><span class="time">约半天</span></div>
+ <ul>
+  <li>把跑通的 Unity 工程<b>截图或录屏</b>，发给师姐确认链路 OK。</li>
+  <li>确认无误后，再进入「魔法岛 4 个任务」的正式玩法设计。</li>
+ </ul>
+</div>
+
+<div class="note">💡 <b>本周三不碰：</b>① 真实硬件（WT901）；② 漂亮美术/场景；③ 大场景搭建。先把"方块能随姿态转"这件事 100% 跑通。</div>
+
+<div class="warn">⚠️ <b>关于"大模型接入 Unity"：</b>那是后面锦上添花的功能（比如给小孩做语音引导），跟"单九轴实时控制采集数据"这条主线无关。本周<b>先放一边</b>，等核心链路跑通再聊，别让它拖慢进度。</div>
+
+<div class="task">
+ <div class="th"><span class="badge">补充</span><h3>验收自查（任务 4 完成后）</h3></div>
+ <ol class="tips">
+  <li>Unity 运行后，UI Text 上的 roll/pitch/yaw 数值<b>持续在变化</b>（模拟器在发）。</li>
+  <li>按 <code>A</code>/<code>D</code>，方块明显左右翻；按 <code>W</code>/<code>S</code> 前后翻；按 <code>Q</code>/<code>E</code> 左右转。</li>
+  <li>按 <code>R</code> 方块回到水平初始姿态。</li>
+  <li>整条链路不需要任何真实硬件即可运行。</li>
+ </ol>
+</div>
+
+</div></body></html>

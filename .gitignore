@@ -1,0 +1,61 @@
+# ===== Unity 生成目录（必须忽略，否则体积爆炸且无法合并）=====
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+
+# 只有被忽略资源的同名 .meta 才忽略
+!/[Aa]ssets/**/*.meta
+
+# ===== IDE / 编辑器缓存 =====
+.vs/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# ===== Unity 崩溃报告 =====
+sysinfo.txt
+
+# ===== 打包产物 =====
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# ===== 操作系统临时文件 =====
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ===== Word 临时锁文件（你目录里那个 ~$ 开头的 docx）=====
+~$*.docx
+~$*.doc
+
+# ===== Python =====
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# ===== WorkBuddy 本地记忆（含个人信息，不要进共享仓库）=====
+.workbuddy/
+
+# ===== 大型内嵌图 HTML 画廊 / 原始图片（体积大、可重新生成，不进主仓库；需分享走 Release）=====
+generated-images/
+九轴儿童体感游戏_5关卡界面参考.html
+九轴儿童体感游戏_单游戏多任务方案.html
+九轴游戏项目说明.html
+魔法岛_四游戏画面与分工框架图.html
