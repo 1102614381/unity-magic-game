@@ -99,8 +99,8 @@ main              ← 稳定版，只有研究生审核合并
    git clone git@github.com:1102614381/unity-magic-game.git
    cd unity-magic-game
    ```
-4. 建自己的分支：
+4. 切换到自己的分支（分支已在远程建好，直接 checkout 即可，**不要加 `-b`**）：
    ```bash
-   git checkout -b dev/yanzu        # 彦祖；欢婷用 dev/huanting
+   git checkout dev/yanzu        # 彦祖；欢婷用 git checkout dev/huanting
    ```
 5. 改完按上面的「如何同步改动」三步提交并 push，最后在 GitHub 开 Pull Request。
