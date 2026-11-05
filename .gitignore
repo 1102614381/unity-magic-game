@@ -59,3 +59,6 @@ generated-images/
 九轴儿童体感游戏_单游戏多任务方案.html
 九轴游戏项目说明.html
 魔法岛_四游戏画面与分工框架图.html
+
+# 研究者 Python 数据层中的真实录制数据（不进仓库，避免提交实测数据）
+imu_data_layer/data/
