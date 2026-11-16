@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>魔法岛大冒险 · 四游戏玩法设计定版 v1.0</title>
+<style>
+ body{margin:0;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;background:#f4f7fc;color:#1f2933;}
+ header{background:linear-gradient(135deg,#2f6fed,#7b4dff);color:#fff;padding:30px 34px;}
+ header h1{margin:0 0 8px;font-size:24px;} header p{margin:0;opacity:.94;font-size:13.5px;max-width:1000px;line-height:1.7;}
+ .wrap{max-width:1060px;margin:0 auto;padding:24px 20px 50px;}
+ section{background:#fff;border:1px solid #e4e9f0;border-radius:14px;padding:22px 26px;margin-bottom:18px;box-shadow:0 2px 8px rgba(20,40,80,.04);}
+ h2{font-size:19px;margin:0 0 14px;padding-left:12px;border-left:5px solid #2f6fed;}
+ h3{font-size:16px;margin:20px 0 8px;color:#2f4a7a;}
+ p,li{font-size:14.5px;color:#52606d;line-height:1.78;}
+ .key{background:#eafaf1;border:1px solid #bfe6cd;border-radius:10px;padding:13px 17px;font-size:14.5px;color:#1f6b46;line-height:1.75;}
+ .warn{background:#fdeef0;border:1px solid #f6c9cf;border-radius:10px;padding:13px 17px;font-size:14px;color:#a3333f;line-height:1.75;}
+ .rule{background:#fff8ef;border:1px solid #f3d9b0;border-radius:10px;padding:13px 17px;font-size:14px;color:#8a5a1e;line-height:1.75;}
+ .info{background:#eef4ff;border:1px solid #cfe0ff;border-radius:10px;padding:13px 17px;font-size:14px;color:#2b4f8f;line-height:1.75;}
+ table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.8px;}
+ th,td{border:1px solid #e4e9f0;padding:9px 11px;text-align:left;vertical-align:top;}
+ th{background:#eef3fb;color:#2b4f8f;}
+ tr:nth-child(even) td{background:#fafbfe;}
+ code{background:#eef3fb;border:1px solid #d7e3fb;border-radius:5px;padding:1px 7px;font-family:Consolas,monospace;color:#1f4ea8;font-size:12.8px;}
+ pre{background:#0f172a;color:#e2e8f0;padding:13px 15px;border-radius:10px;overflow-x:auto;font-size:12.5px;line-height:1.55;font-family:Consolas,monospace;}
+ .tag{display:inline-block;background:#2f6fed;color:#fff;border-radius:7px;padding:2px 10px;font-size:12px;margin-right:6px;}
+ .tag.b{background:#7b4dff;} .tag.c{background:#19b3a6;} .tag.d{background:#e8833a;}
+ .chg{background:#fff6e6;border-left:4px solid #e8a13a;padding:9px 14px;margin:8px 0;font-size:13.8px;color:#7a5410;border-radius:0 8px 8px 0;}
+ .flow{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:12px 0;}
+ .flow .n{background:#2f6fed;color:#fff;border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:600;}
+ .flow .a{color:#2f6fed;font-weight:700;}
+ ul{margin:8px 0;padding-left:24px;}
+ .small{font-size:12.5px;color:#83909e;}
+</style></head><body>
+<header>
+ <h1>魔法岛大冒险 · 四个小游戏玩法设计【定版 v1.0】</h1>
+ <p>适用对象：彦祖（G1+G2）、欢婷（G3+G4）及研究者。本文件基于欢婷《四游戏实现与玩法总结》修改定版，<b>是开发的唯一执行标准</b>。硬件：一根魔法棒（WT901WIFI 九轴 IMU）；引擎：Unity（URP）；数据链：Python → UDP:5005 → Unity，Unity → UDP:5006 → Python（50Hz）。</p>
+</header>
+<div class="wrap">
+
+<section><h2>〇、定版变更摘要（相对欢婷 V0）</h2>
+<p>欢婷的原稿质量很高（回中判定、参数化、题目审核、混淆变量提醒都保留了）。以下 6 处为定版统一修改，请以此为准：</p>
+<div class="chg"><b>1. 登录页去"采集化"</b>：原稿"选研究者 + 受试儿童 / 开始采集"改为<b>双入口</b>——儿童点头像即玩、零表单；研究者字段收进齿轮后台。详见第二节。</div>
+<div class="chg"><b>2. 事件名对齐冻结契约</b>：<code>START</code> → <code>TASK_START</code>，并补齐 <code>TARGET_SHOW</code>（算反应时必需）、<code>ACTION_START</code>、<code>TASK_FAILED</code>、<code>TASK_END</code>。</div>
+<div class="chg"><b>3. G2"停住"判定纠正</b>：原稿写作"回中判定"有误——G2 是转到精灵处停住，应判<b>角速度静止</b>，不是角度回中（详见 G2）。</div>
+<div class="chg"><b>4. G3 确认动作锁定</b>：原稿"前倾或晃一下可配置"会导致数据不可比，默认锁定<b>前倾保持</b>；shake 仅备选，且必须记录 <code>confirm_type</code>。</div>
+<div class="chg"><b>5. 场景命名裁决</b>：统一为语义化命名（下表），不再使用 Game01–Game04。彦祖需把已有场景重命名一次以对齐。</div>
+<div class="chg"><b>6. G1 认知目标表述</b>：改为"姿态感知与稳定控制（感知平衡）"——既对齐导师的"感知平衡"方向，又避免夸大成"身体平衡训练"。</div>
+</section>
+
+<section><h2>一、总体流程（一次完整体验）</h2>
+<div class="flow">
+ <span class="n">启动页</span><span class="a">→</span>
+ <span class="n">登录/档案页（双入口）</span><span class="a">→</span>
+ <span class="n">魔法岛主页（4岛+进度星）</span><span class="a">→</span>
+ <span class="n">① 引导</span><span class="a">→</span>
+ <span class="n">② 游戏进行</span><span class="a">→</span>
+ <span class="n">③ 实时反馈</span><span class="a">→</span>
+ <span class="n">④ 回合结算</span><span class="a">→</span>
+ <span class="n">返回主页</span>
+</div>
+<p>四个游戏<b>结构完全一样</b>（引导→玩→反馈→结算四页），只在"游戏进行页"内容不同。结算亮星显示在地图上形成进度。</p>
+<div class="info"><b>场景命名（唯一标准，Build Settings 里必须一字不差）：</b><br>
+<code>Start</code>（启动/登录页） · <code>MainMenu</code>（魔法岛主页） · <code>Game1_StarBalance</code> · <code>Game2_FindSpirit</code> · <code>Game3_ForestFriends</code> · <code>Game4_MemoryForest</code><br>
+<span class="small">彦祖现有 Game01/02/03/04 请重命名为上述语义化名称；重命名后更新 Build Settings，全队只保留这一套命名。</span></div>
+</section>
+
+<section><h2>二、登录 / 档案页（重点改造：去"采数据感"）</h2>
+<div class="warn"><b>设计原则：</b>孩子和家长看到的界面里<b>不出现</b>"被试 / 编号 / 实验组 / 对照组 / 采集 / Dataset / Session"等研究词。这些字段照记，但只在研究者后台出现。目标是让孩子觉得"我在选我的小精灵开始玩"，而不是"我被登记做实验"。</div>
+
+<h3>儿童入口（主界面，默认展示）</h3>
+<ul>
+ <li>页面文案：<b>"今天是谁来魔法岛玩呀？"</b>——下方一排<b>卡通头像卡</b>（小兔子、小熊、小猫…）供点选。</li>
+ <li>孩子点一个头像 → 直接进入魔法岛主页。<b>零输入框、零必填项。</b></li>
+ <li>头像与匿名档案（P001…）在后台一一对应，选头像 = 选档案，数据仍存到正确文件夹。</li>
+ <li>首次使用的头像可由研究者预先建好；孩子不需要知道自己被分配了编号。</li>
+</ul>
+
+<h3>研究者入口（右上角齿轮 ⚙，普通孩子不会点）</h3>
+<ul>
+ <li>点齿轮 → 简单 PIN 或长按进入（彦祖实现，PIN 可与研究者约定固定值）。</li>
+ <li>此页才出现档案字段：<code>participant_id</code>（匿名编号 P00x）、<b>年龄</b>、<b>组别</b>（实验/对照）、<b>惯用手</b>、<code>session_id</code>、数据模式 <code>SIM / REAL</code>。</li>
+ <li>字段只在后台录入一次，之后自动带入所有 trial；<b>绝不出现在儿童主界面</b>。</li>
+ <li>设置面板也放这里：灵敏度、确认保持时长 <code>confirmHoldSec</code>、音量、语音提示开关。</li>
+</ul>
+<div class="key"><b>数据不受影响：</b>儿童点头像时，Unity 已在后台把 <code>participant_id / session_id / task_id / trial_id</code> 注入事件并经 UDP:5006 回传 CSV。对研究者，数据完整可追溯；对儿童，只有一个头像选择。</div>
+</section>
+
+<section><h2>三、公共规则（四游戏共用，InputRouter 统一实现）</h2>
+<table>
+ <tr><th>规则</th><th>定版定义</th></tr>
+ <tr><td><b>回中才算一次</b></td><td>棒子歪出去→触发动作，<b>回到中立区那一刻</b>才记为一次有效动作。一直歪着不动永远只算 1 次——防止"抖一串算一串"。</td></tr>
+ <tr><td><b>三参数</b></td><td>死区 <code>6°</code>（完全不动）· 触发 <code>12°</code>（算一次动作）· 回中容差 <code>5°</code>（回到中立区算回中）。均为可调参数，写进设置面板。</td></tr>
+ <tr><td><b>键盘模拟</b></td><td>WASD = 前后左右倾斜，Q/E = 水平旋转，空格 = 确认。不接真棒也能全流程玩通（SIM 模式）。</td></tr>
+ <tr><td><b>反馈温和</b></td><td>做对给星星+鼓励语；做错不批评、不刺耳，给"再试一次"的温柔提示。避免强声光、频繁闪烁、强制倒计时压迫。</td></tr>
+</table>
+<p class="small">这些判定逻辑统一放在 <code>InputRouter</code>（一个脚本），四个游戏都调用它，<b>不要每个游戏各写一套</b>。</p>
+</section>
+
+<section><h2>四、统一数据契约（锁死，学生不得修改）</h2>
+<p><b>1) IMU 每帧（Python → Unity，Unity 只读）：</b></p>
+<pre>device_id, frame_id, timestamp, host_timestamp_ms,
+Ax Ay Az, Gx Gy Gz, Mx My Mz,   // 磁场真机为原始计数 mx_raw/my_raw/mz_raw（raw counts），非 µT
+roll pitch yaw,                 // 单位：度
+motion_state, source            // source: SIM / WT901</pre>
+<p><b>2) 游戏事件（Unity → Python，7 种，每条带时间戳）：</b></p>
+<pre>TASK_START   TARGET_SHOW   ACTION_START   ACTION_END
+TASK_SUCCESS   TASK_FAILED   TASK_END</pre>
+<div class="rule">⚠️ <code>TARGET_SHOW</code> 必须在目标出现那一刻打点，<code>ACTION_END</code> 在有效动作完成时打点——<b>reaction_time_ms = ACTION_END − TARGET_SHOW</b>，缺任一个就算不出反应时。</div>
+<p><b>3) 认知任务指标（每条 trial 必记，导师要求的"实际意义"落地处）：</b></p>
+<pre>task_id, trial_id,
+target,            // 本次目标（如"蓝色精灵" / "左→右→前"）
+user_response,     // 儿童实际选择/动作序列
+is_correct,        // 对错
+reaction_time_ms,  // 反应时长
+game_event,        // 上述 7 种事件
+confirm_type       // G3 用：hold / shake（默认 hold）</pre>
+<p class="small">记录分工：注意力记"找对没+反应时"；社交记"选了啥+提示几次"；记忆记"目标序列 vs 实际序列+正确率"；感知平衡记"稳定保持时长+超出次数"。</p>
+</section>
+
+<section><h2>五、四个游戏（定版玩法）</h2>
+
+<h3><span class="tag">G1</span> 星星平衡岛 <span class="small">场景：Game1_StarBalance · 负责：彦祖</span></h3>
+<p><b>认知目标：</b>姿态感知与稳定控制（感知平衡）——用小幅、稳定的倾斜把手中的"星星"稳住。<span class="small">（注意：这是手部精细姿态控制，不是全身平衡训练，对外表述避免夸大。）</span></p>
+<p><b>怎么玩：</b>星星在屏幕顶端架子上，玩家左右/前后慢慢倾斜魔法棒，星星随之滚动；用小幅度稳定的力量把星星<b>推进中间圆圈并稳住 2 秒</b>，星星亮起即成功。晃太猛星星滚出去要重来。</p>
+<p><b>实现要点：</b>读 roll/pitch → 转星星移动速度（死区内不动）→ Rigidbody2D 施力；判定 = 位置在圈内 + 持续 2 秒；难度 = 圈变小 / 加风力干扰 / 时间变短。</p>
+<p><b>记录：</b>稳定保持时长、超出目标圈次数、是否成功、用时。</p>
+
+<h3><span class="tag b">G2</span> 寻找魔法精灵 <span class="small">场景：Game2_FindSpirit · 负责：彦祖</span></h3>
+<p><b>认知目标：</b>持续注意力 + 水平方向搜索控制。</p>
+<p><b>怎么玩：</b>精灵藏在场景转盘/花丛后，玩家水平左右转棒（像转方向盘），视角随之转；当精灵出现在视野中央时<b>停住不动 1 秒</b>，精灵跳出。找到指定数量过关。</p>
+<div class="rule"><b>定版纠正：</b>"停住"用<b>角速度静止判定</b>——<code>|Δyaw/Δt| &lt; 阈值</code> 持续 1 秒；<b>不是</b>要求棒子回到正前方（那与"转到精灵处停住"矛盾）。水平旋转用 <code>yaw 累计值</code>，不要用 roll/pitch。</div>
+<p><b>实现要点：</b>yaw 累计 → 映射视角/转盘角度；精灵进入视野中心区 + 角速度静止 1 秒 → 找到；难度 = 位置更偏 / 数量增多 / 加相似干扰物。</p>
+<p><b>记录：</b>target（哪个精灵）、is_correct、reaction_time_ms、误触次数。</p>
+
+<h3><span class="tag c">G3</span> 帮助森林伙伴 <span class="small">场景：Game3_ForestFriends · 负责：欢婷</span></h3>
+<p><b>认知目标：</b>情景理解与选择决策（社交）。</p>
+<p><b>怎么玩：</b>出现情景卡（如"小兔子迷路了"）+ 3 个选项卡；玩家左右倾斜棒切卡（切一张必须先回中才能切下一张），选中卡放大高亮；再<b>向前倾并保持 1 秒</b>确认。答对伙伴开心，答错温柔提示"再想一想"。</p>
+<div class="warn"><b>内容审核硬门槛：</b>情景题必须存 JSON，且每题<b>必须带 <code>reviewed_by</code> / <code>review_date</code> 字段</b>；无审核人信息的题目<b>不允许载入正式版</b>。题目内容须经专业（特教/心理）人员审核后使用。</div>
+<p><b>确认动作定版：</b>默认锁定<b>前倾保持</b>（<code>confirmHoldSec</code>，与 G1 同族连续姿态、可量化）；shake 仅作备选配置，若启用必须在数据里写 <code>confirm_type=shake</code>，否则数据不可比。</p>
+<p><b>记录：</b>目标情景 id、user_response（选项序号）、is_correct、reaction_time_ms、提示次数、confirm_type。</p>
+
+<h3><span class="tag d">G4</span> 魔法记忆森林 <span class="small">场景：Game4_MemoryForest · 负责：欢婷</span></h3>
+<p><b>认知目标：</b>工作记忆（记住并复现顺序）。</p>
+<p><b>怎么玩：</b>屏幕上 3 个蘑菇依次亮起（如 左→右→前 = L-R-F），玩家看完后用棒按同样顺序做动作复现；做对亮一格灯、连续答对进下一难度（序列变长），做错重看演示。</p>
+<div class="warn"><b>数据解读提醒：</b>做错<b>可能是手部控制没做好，不一定是记不住</b>。分析时不能仅凭对错下"记忆差"的结论——要结合 ACTION_END 的动作轨迹判断。</div>
+<p><b>实现要点：</b>演示阶段（蘑菇依次亮+音效）→ 输入阶段（复用 G1–G3 同一套 Left/Right/Forward/Back 动作判定）；每个动作 S0→S1→S2 闭合记一次；输入阶段 10 秒没动给提示。</p>
+<p><b>记录：</b>target（目标序列）、user_response（实际序列）、is_correct、尝试次数、错误位置。</p>
+<p><b>最小原型必须验证三件事：</b>① 快速抖 10 下最多算 2 次动作；② 一直歪着 5 秒只算 1 次；③ 序列比对正确。</p>
+</section>
+
+<section><h2>六、公共模块与分工</h2>
+<table>
+ <tr><th>模块</th><th>作用</th><th>负责</th></tr>
+ <tr><td><span class="tag">框架</span> 登录/主页/场景切换</td><td>双入口登录页、魔法岛主页、Build Settings、事件系统骨架</td><td>彦祖</td></tr>
+ <tr><td><span class="tag">Core</span> InputRouter</td><td>把棒子动作统一翻译成 左/右/前/后/转 + 回中/去抖判定，四游戏共用</td><td>彦祖</td></tr>
+ <tr><td><span class="tag b">Core</span> 数据记录</td><td>7 种事件 + 认知指标，UDP:5006 回传 CSV</td><td>彦祖（接口）/ 两人各自</td></tr>
+ <tr><td><span class="tag c">G3+G4</span> 离散/序列玩法</td><td>切卡+确认、序列记忆+去抖；题目 JSON 与审核字段</td><td>欢婷</td></tr>
+ <tr><td><span class="tag">G1+G2</span> 连续姿态玩法</td><td>平衡滚球、yaw 搜索+静止判定</td><td>彦祖</td></tr>
+ <tr><td><span class="tag d">数据层</span> Python</td><td>IMU 接入/模拟/CSV/UDP 50Hz，维护字段契约</td><td>研究者</td></tr>
+</table>
+<div class="key"><b>分工逻辑：</b>按"连续姿态控制（G1/G2，Roll/Pitch/Yaw 平滑）" vs "离散状态与序列（G3/G4，选项/确认/顺序）"分组，代码复用最自然、冲突最少。<b>两人只改自己游戏的场景与脚本，共享的 InputReceiver / InputRouter / 事件系统谁都不要私自改字段。</b></div>
+</section>
+
+<section><h2>七、验收标准（DoD，交付前逐条自查）</h2>
+<ul>
+ <li>□ 四个场景名与第一节完全一致，Build Settings 里只保留这一套；</li>
+ <li>□ 儿童入口无任何研究词表单；研究者字段只在齿轮后台出现；</li>
+ <li>□ SIM 模式（键盘 WASD/QE/空格）下四个游戏都能从引导玩到结算；</li>
+ <li>□ 7 种事件全部按契约触发，<code>TARGET_SHOW</code> 与 <code>ACTION_END</code> 时间差能算出反应时；</li>
+ <li>□ 回中判定生效：一直歪着不重复计次（G4 原型三件事全过）；</li>
+ <li>□ G2 用角速度静止判定，不是角度回中；</li>
+ <li>□ G3 所有正式题目都带 <code>reviewed_by / review_date</code>；</li>
+ <li>□ 结算页亮星同步到主页地图进度；</li>
+ <li>□ 不宣称"改善注意力/记忆/社交"等疗效——只记录行为表现。</li>
+</ul>
+<div class="warn"><b>研究边界：</b>儿童游戏是 IMU 研究的<b>一个应用验证场景</b>，主线仍是 <code>Calibration → Motion State → Qa/Qm → Adaptive Fusion</code>。最终产出 = IMU 原始数据 + 认知任务 + 动作事件 + 任务表现，四类可关联信息。</div>
+</section>
+
+</div></body></html>
