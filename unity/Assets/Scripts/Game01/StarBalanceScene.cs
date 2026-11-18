@@ -213,10 +213,10 @@ namespace MagicIsland.Game01
 
             // 键盘助力：始终可用并与 IMU 叠加，保证玩家对自发滚动的球始终有控制权
             float x = 0f, z = 0f;
-            if (Input.GetKey(KeyCode.RightArrow)) x += 1f;
-            if (Input.GetKey(KeyCode.LeftArrow)) x -= 1f;
-            if (Input.GetKey(KeyCode.UpArrow)) z += 1f;
-            if (Input.GetKey(KeyCode.DownArrow)) z -= 1f;
+            if (Input.GetKey(KeyCode.D)) x += 1f;
+            if (Input.GetKey(KeyCode.A)) x -= 1f;
+            if (Input.GetKey(KeyCode.W)) z += 1f;
+            if (Input.GetKey(KeyCode.S)) z -= 1f;
             force += new Vector3(x, 0f, z) * (keyboardAssistDegrees * forceScale);
 
             return force;
@@ -311,7 +311,7 @@ namespace MagicIsland.Game01
             string hold = inside && !_trialDone ? $"保持中 {_holdTimer:0.0}/{holdSeconds:0} 秒" : string.Empty;
             _hud.text = $"{conn}  roll={roll}  pitch={pitch}\n" +
                         $"第 {_trialIndex + 1}/{trialCount} 轮  出圈 {_outOfTargetCount} 次  {hold}\n" +
-                        "Esc 返回主页";
+                        "WASD 推球  空格 下一轮  Esc 返回主页";
         }
     }
 }
