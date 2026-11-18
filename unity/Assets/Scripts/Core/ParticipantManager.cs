@@ -17,7 +17,7 @@ namespace MagicIsland.Core
     }
 
     /// <summary>
-    /// 被试与会话管理：建立 Dataset/P001/Session_001 目录并写入 participant_info.csv。
+    /// 被试与会话管理：建立 Dataset/P001/S001 目录并写入 participant_info.csv。
     /// 目录结构与需求说明书第九章一致。
     /// </summary>
     public class ParticipantManager : MonoBehaviour
@@ -114,7 +114,7 @@ namespace MagicIsland.Core
         public string PredictNextSessionId(string participantId)
         {
             participantId = SanitizeId(participantId);
-            if (string.IsNullOrEmpty(participantId)) return "Session_001";
+            if (string.IsNullOrEmpty(participantId)) return "S001";
             string folder = Path.Combine(DatasetRoot, participantId);
             return NextSessionId(folder);
         }
@@ -129,7 +129,8 @@ namespace MagicIsland.Core
                     foreach (var dir in Directory.GetDirectories(participantFolder))
                     {
                         string name = Path.GetFileName(dir);
-                        var m = Regex.Match(name, @"^Session_(\d+)$", RegexOptions.IgnoreCase);
+                        // 兼容 V1.1 的 S001 与旧版 Session_001 两种命名
+                        var m = Regex.Match(name, @"^(?:S|Session_)(\d+)$", RegexOptions.IgnoreCase);
                         if (m.Success && int.TryParse(m.Groups[1].Value, out int n) && n > max) max = n;
                     }
                 }
@@ -138,7 +139,7 @@ namespace MagicIsland.Core
             {
                 Debug.LogWarning($"[ParticipantManager] 扫描会话目录失败：{e.Message}");
             }
-            return "Session_" + (max + 1).ToString("000");
+            return "S" + (max + 1).ToString("000");
         }
 
         /// <summary>只保留字母、数字、下划线、短横线，避免目录名非法。</summary>

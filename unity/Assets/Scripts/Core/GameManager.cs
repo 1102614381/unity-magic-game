@@ -33,6 +33,7 @@ namespace MagicIsland.Core
             root.AddComponent<GameEventManager>();
             root.AddComponent<ParticipantManager>();
             root.AddComponent<IMUReceiver>();
+            root.AddComponent<InputRouter>();
             DontDestroyOnLoad(root);
         }
 

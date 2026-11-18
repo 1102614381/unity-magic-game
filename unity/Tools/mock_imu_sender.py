@@ -72,9 +72,10 @@ def read_keys(state, step):
 
 
 def demo_state(state, t):
-    state.roll = 25.0 * math.sin(t * 1.2)
-    state.pitch = 15.0 * math.sin(t * 0.8)
-    state.yaw = 40.0 * math.sin(t * 0.4)
+    # 温和摆动：小幅度、慢频率，模拟儿童轻微的身体晃动
+    state.roll = 10.0 * math.sin(t * 0.45)
+    state.pitch = 7.0 * math.sin(t * 0.32)
+    state.yaw = 20.0 * math.sin(t * 0.25)
 
 
 def main():

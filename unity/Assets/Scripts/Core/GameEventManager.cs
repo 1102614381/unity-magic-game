@@ -23,13 +23,16 @@ namespace MagicIsland.Core
         public const string TaskFailed = "TASK_FAILED";
         public const string PromptGiven = "PROMPT_GIVEN";
 
-        // 游戏1 专有
-        public const string ObstacleCollision = "OBSTACLE_COLLISION";
-        public const string TargetReached = "TARGET_REACHED";
+        // 游戏1 专有（V1.1 7.5）
+        public const string TargetEnter = "TARGET_ENTER";
+        public const string TargetExit = "TARGET_EXIT";
+        public const string HoldSuccess = "HOLD_SUCCESS";
 
-        // 游戏2 专有
+        // 游戏2 专有（V1.1 7.5）
+        public const string TargetAligned = "TARGET_ALIGNED";
+        public const string HoldStart = "HOLD_START";
         public const string TargetFound = "TARGET_FOUND";
-        public const string WrongSelection = "WRONG_SELECTION";
+        public const string WrongTarget = "WRONG_TARGET";
 
         // 游戏3 专有
         public const string OptionSelected = "OPTION_SELECTED";
@@ -114,6 +117,9 @@ namespace MagicIsland.Core
             set => _score = value;
         }
 
+        /// <summary>确认动作类型（V1.1：默认 hold；若改 shake 必须记录并通知研究者）。</summary>
+        public string ConfirmType { get; set; } = "hold";
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -191,6 +197,38 @@ namespace MagicIsland.Core
             {
                 Debug.Log($"[Event] {eventType} task={_taskId} trial={_trialId} target={targetId} resp={response} correct={correct}");
             }
+
+            // V1.1 7.3：同步回传 Python（UDP 5006），失败不影响本地 CSV
+            EventSender.Send(BuildEventJson(eventId, eventType, elapsedMs, targetId, response, correct));
+        }
+
+        /// <summary>按 V1.1 7.3 样例拼事件 JSON（字段名不可改动，属共享契约）。</summary>
+        private string BuildEventJson(string eventId, string eventType, float elapsedMs,
+                                      string targetId, string response, string correct)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.Append("{\"schema_version\":\"1.1\"");
+            sb.Append(",\"event_id\":\"").Append(J(eventId)).Append('"');
+            sb.Append(",\"session_id\":\"").Append(J(_sessionId)).Append('"');
+            sb.Append(",\"participant_id\":\"").Append(J(_participantId)).Append('"');
+            sb.Append(",\"task_id\":").Append(_taskId);
+            sb.Append(",\"trial_id\":\"").Append(J(_trialId)).Append('"');
+            sb.Append(",\"event_type\":\"").Append(J(eventType)).Append('"');
+            sb.Append(",\"unity_elapsed_ms\":").Append(elapsedMs.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
+            sb.Append(",\"target_id\":\"").Append(J(targetId)).Append('"');
+            sb.Append(",\"user_response\":\"").Append(J(response)).Append('"');
+            sb.Append(",\"is_correct\":").Append(correct == "true" ? "true" : correct == "false" ? "false" : "null");
+            sb.Append(",\"difficulty\":").Append(string.IsNullOrEmpty(_difficulty) ? "0" : _difficulty);
+            sb.Append(",\"prompt_level\":").Append(_promptLevel);
+            sb.Append(",\"confirm_type\":\"").Append(J(ConfirmType)).Append('"');
+            sb.Append("}");
+            return sb.ToString();
+        }
+
+        private static string J(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return string.Empty;
+            return s.Replace("\\", "\\\\").Replace("\"", "\\\"");
         }
     }
 }

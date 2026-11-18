@@ -249,7 +249,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 440718580}
-  - component: {fileID: 440718579}
+  - component: {fileID: 440718581}
   m_Layer: 0
   m_Name: Start
   m_TagString: Untagged
@@ -257,21 +257,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &440718579
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 440718578}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 702f5fc20b5a1dd4790c21b21ef6bf08, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  buildUIInCode: 1
-  autoJump: 0
-  autoJumpSeconds: 3
 --- !u!4 &440718580
 Transform:
   m_ObjectHideFlags: 0
@@ -287,6 +272,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &440718581
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 440718578}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2477cc32ceefc846a0f12f906d98827, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  researcherPin: 1234
+  avatarAParticipantId: P001
+  avatarBParticipantId: P002
 --- !u!1 &961739749
 GameObject:
   m_ObjectHideFlags: 0
@@ -368,7 +368,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
