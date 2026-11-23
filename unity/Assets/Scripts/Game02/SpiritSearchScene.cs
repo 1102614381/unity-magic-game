@@ -7,9 +7,9 @@ using UnityEngine.UI;
 namespace MagicIsland.Game02
 {
     /// <summary>
-    /// G2 寻找魔法精灵 V2.1（低龄儿童版）：
-    /// 判定/事件与 V1.1 完全一致；6 个精灵用项目自带蓝精灵衍生的六色图（spirit_*.png）。
-    /// 关键：LoadSprite 按图片宽度=1世界单位，精灵缩放 1.6 单位、半径 7 的圆周排布，互不遮挡。
+    /// G2 寻找魔法精灵 V3（低龄儿童版·白天平原主题）：
+    /// 判定/事件与 V1.1 完全一致；视觉改为 3D 白天平原（绿草、小花、白云、大太阳）。
+    /// 精灵、云朵、太阳都用 billboard 面向圆心玩家且严格正立（up=世界向上）。
     /// 场景里只需一个空物体挂本脚本。
     /// </summary>
     public class SpiritSearchScene : MonoBehaviour
@@ -69,7 +69,7 @@ namespace MagicIsland.Game02
         private float[] _spiritPhase;
         private Vector3[] _spiritBasePos;
         private float _targetGlow;
-        private const float SpiritScale = 1.6f;
+        private const float SpiritScale = 1.8f;
 
         private int TargetIndex => _trialIndex % _spiritNames.Length;
 
@@ -88,10 +88,12 @@ namespace MagicIsland.Game02
                 var camGo = new GameObject("Main Camera", typeof(Camera), typeof(AudioListener));
                 cam = camGo.GetComponent<Camera>();
             }
-            cam.transform.position = new Vector3(0f, 1.4f, 0f);
+            cam.transform.position = new Vector3(0f, 1.6f, 0f);
             cam.transform.rotation = Quaternion.identity;
+            cam.fieldOfView = 68f;
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.86f, 0.94f, 1.00f);
+            cam.backgroundColor = new Color(0.53f, 0.80f, 0.98f); // 明亮白天蓝天
+            cam.farClipPlane = 250f;
             _cameraT = cam.transform;
 
             if (FindObjectOfType<Light>() == null)
@@ -99,23 +101,53 @@ namespace MagicIsland.Game02
                 var lightGo = new GameObject("Directional Light");
                 var light = lightGo.AddComponent<Light>();
                 light.type = LightType.Directional;
-                light.intensity = 1.05f;
+                light.intensity = 1.15f;
                 lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
             }
+            RenderSettings.ambientLight = new Color(0.85f, 0.90f, 0.95f);
 
-            // 地面：柔和浅绿 + 梦幻岛贴图（一张铺满）
+            // ============ 3D 白天平原：绿色草地（不用梦幻岛贴图）============
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Ground";
-            ground.transform.localScale = new Vector3(3f, 1f, 3f);
+            ground.name = "GrassPlain";
+            ground.transform.localScale = new Vector3(8f, 1f, 8f); // 80 x 80
             ground.transform.position = new Vector3(0f, -0.6f, 0f);
-            var island = Resources.Load<Texture2D>("Art/bg_island_map");
-            var gm = MakeMat(island != null ? Color.white : new Color(0.80f, 0.92f, 0.72f));
-            if (island != null) gm.mainTexture = island;
-            ground.GetComponent<Renderer>().material = gm;
+            ground.GetComponent<Renderer>().material = MakeMat(new Color(0.48f, 0.78f, 0.38f));
 
-            // 背景用清爽天蓝（不做竖立背景板，避免转身看到边缘）；梦幻岛只作地面贴图
+            // 小草：绿色细锥，随机散布（不遮挡视线）
+            for (int i = 0; i < 70; i++)
+            {
+                float a = Random.Range(0f, Mathf.PI * 2f);
+                float r = Random.Range(3f, 16f);
+                var pos = new Vector3(Mathf.Sin(a) * r, -0.35f, Mathf.Cos(a) * r);
+                AddGrass(pos, Random.Range(0.35f, 0.7f));
+            }
+            // 小花：五颜六色的小花（花心+花瓣），点缀平原
+            Color[] petal = { new Color(1f,0.55f,0.62f), new Color(1f,0.9f,0.45f),
+                              new Color(0.95f,0.6f,1f), Color.white, new Color(0.6f,0.8f,1f) };
+            for (int i = 0; i < 40; i++)
+            {
+                float a = Random.Range(0f, Mathf.PI * 2f);
+                float r = Random.Range(3f, 15f);
+                var pos = new Vector3(Mathf.Sin(a) * r, -0.58f, Mathf.Cos(a) * r);
+                AddFlower(pos, petal[i % petal.Length]);
+            }
 
-            // 6 个精灵：用六色精灵图，半径 7 圆周排布，面朝圆心
+            // ============ 天空装饰：白云 + 大太阳（billboard 面向圆心玩家）============
+            float[] cloudAngles = { 15f, 75f, 135f, 195f, 255f, 315f };
+            foreach (float ang in cloudAngles)
+            {
+                float a = ang * Mathf.Deg2Rad;
+                var pos = new Vector3(Mathf.Sin(a) * 30f, 9f + Random.Range(-1f, 2f), Mathf.Cos(a) * 30f);
+                AddSkySprite("Cloud_" + ang, "cloud_float", pos, 9f, 2);
+            }
+            // 大太阳：放在东北方向高空
+            {
+                float a = 50f * Mathf.Deg2Rad;
+                var pos = new Vector3(Mathf.Sin(a) * 34f, 15f, Mathf.Cos(a) * 34f);
+                AddSkySprite("BigSun", "sun_big", pos, 12f, 3);
+            }
+
+            // ============ 6 个精灵：半径 7 圆周排布，正立朝向圆心玩家 ============
             _spirits = new Transform[_spiritNames.Length];
             _spiritPhase = new float[_spiritNames.Length];
             _spiritBasePos = new Vector3[_spiritNames.Length];
@@ -124,7 +156,7 @@ namespace MagicIsland.Game02
             {
                 float angle = i * 360f / _spiritNames.Length;
                 var go = new GameObject("Spirit_" + _spiritNames[i]);
-                var pos = new Vector3(Mathf.Sin(angle * Mathf.Deg2Rad) * 7f, 1.2f,
+                var pos = new Vector3(Mathf.Sin(angle * Mathf.Deg2Rad) * 7f, 1.0f,
                                       Mathf.Cos(angle * Mathf.Deg2Rad) * 7f);
                 go.transform.position = pos;
                 _spiritBasePos[i] = pos;
@@ -135,8 +167,8 @@ namespace MagicIsland.Game02
                 sr.color = Color.white;
                 sr.sortingOrder = 10;
                 go.transform.localScale = Vector3.one * SpiritScale;
-                // Sprite 正面朝 -Z；让精灵面朝圆心（玩家在中心），这样看到正脸
-                go.transform.rotation = Quaternion.LookRotation(-pos.normalized, Vector3.up);
+                // 只取水平朝向，up 用世界向上 → 严格正立、不歪不倒
+                go.transform.rotation = FaceCenter(pos);
 
                 if (sr.sprite == null)
                 {
@@ -146,6 +178,54 @@ namespace MagicIsland.Game02
                 }
                 _spirits[i] = go.transform;
             }
+        }
+
+        /// <summary>只按水平方向朝圆心，保证图片正立（up=世界向上）。</summary>
+        private static Quaternion FaceCenter(Vector3 worldPos)
+        {
+            Vector3 toCenter = new Vector3(-worldPos.x, 0f, -worldPos.z).normalized;
+            if (toCenter.sqrMagnitude < 0.001f) toCenter = Vector3.forward;
+            return Quaternion.LookRotation(toCenter, Vector3.up);
+        }
+
+        private void AddGrass(Vector3 pos, float h)
+        {
+            var g = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            g.name = "GrassBlade";
+            Object.Destroy(g.GetComponent<Collider>());
+            g.transform.position = pos;
+            g.transform.localScale = new Vector3(0.06f, h * 0.5f, 0.06f);
+            g.transform.rotation = Quaternion.Euler(Random.Range(-12f,12f), 0f, Random.Range(-12f,12f));
+            g.GetComponent<Renderer>().material = MakeMat(new Color(0.30f + Random.Range(0f,0.12f), 0.68f, 0.28f));
+        }
+
+        private void AddFlower(Vector3 pos, Color color)
+        {
+            // 茎
+            var stem = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            stem.name = "FlowerStem";
+            Object.Destroy(stem.GetComponent<Collider>());
+            stem.transform.position = pos + Vector3.up * 0.14f;
+            stem.transform.localScale = new Vector3(0.025f, 0.14f, 0.025f);
+            stem.GetComponent<Renderer>().material = MakeMat(new Color(0.25f, 0.6f, 0.25f));
+            // 花瓣（一个小球当花冠）
+            var head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            head.name = "FlowerHead";
+            Object.Destroy(head.GetComponent<Collider>());
+            head.transform.position = pos + Vector3.up * 0.32f;
+            head.transform.localScale = Vector3.one * 0.19f;
+            head.GetComponent<Renderer>().material = MakeMat(color);
+        }
+
+        private void AddSkySprite(string name, string spriteName, Vector3 pos, float size, int order)
+        {
+            var go = new GameObject(name);
+            go.transform.position = pos;
+            go.transform.localScale = Vector3.one * size;
+            go.transform.rotation = FaceCenter(pos);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = KidVisualFactory.LoadSprite(spriteName);
+            sr.sortingOrder = order;
         }
 
         private static Material MakeMat(Color color)
@@ -165,7 +245,7 @@ namespace MagicIsland.Game02
             KidVisualFactory.CreateSpriteImage(canvas.transform, star, 60f, 60f,
                                                new Vector2(0.5f, 1f), new Vector2(0f, -50f), "TitleStar");
             var title = UIFactory.CreateText(canvas.transform, "找精灵", 34, TextAnchor.UpperCenter,
-                                             KidVisualFactory.CandyPurple, false);
+                                             Color.white, false);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = new Vector2(0.5f, 1f);
             titleRt.anchorMax = new Vector2(0.5f, 1f);
@@ -204,7 +284,7 @@ namespace MagicIsland.Game02
             _successCard.SetActive(false);
 
             _hud = UIFactory.CreateText(canvas.transform, string.Empty, 22, TextAnchor.LowerLeft,
-                                        new Color(0.3f, 0.3f, 0.3f, 0.6f), false);
+                                        new Color(1f, 1f, 1f, 0.75f), false);
             var hudRect = _hud.rectTransform;
             hudRect.anchorMin = Vector2.zero;
             hudRect.anchorMax = Vector2.zero;

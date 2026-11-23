@@ -51,7 +51,34 @@ namespace MagicIsland.UI
 
         private void BuildUI()
         {
-            var canvas = UIFactory.CreateCanvas("Canvas_MainMenu");
+            var canvas = UIFactory.CreateCanvas("Canvas_MainMenu", false);
+
+            // 梦幻岛地图作为整个选关界面的背景（四座岛入口浮在图上）
+            var bgSprite = KidVisualFactory.LoadSprite("bg_island_map");
+            if (bgSprite != null)
+            {
+                var bgGo = new GameObject("MenuBackground", typeof(RectTransform), typeof(UnityEngine.UI.Image));
+                bgGo.transform.SetParent(canvas.transform, false);
+                var bgRect = bgGo.GetComponent<RectTransform>();
+                bgRect.anchorMin = Vector2.zero;
+                bgRect.anchorMax = Vector2.one;
+                bgRect.offsetMin = Vector2.zero;
+                bgRect.offsetMax = Vector2.zero;
+                var bgImg = bgGo.GetComponent<UnityEngine.UI.Image>();
+                bgImg.sprite = bgSprite;
+                bgImg.preserveAspect = false; // 铺满整个屏幕
+                bgImg.color = Color.white;
+                bgImg.raycastTarget = false;
+            }
+            else
+            {
+                UIFactory.CreateImage(canvas.transform, "Background", UIFactory.Background);
+            }
+
+            // 半透明白色面板，让文字在背景图上依然清晰
+            var veil = UIFactory.CreateImage(canvas.transform, "ContentVeil", new Color(1f, 1f, 1f, 0.55f));
+            veil.raycastTarget = false;
+
             var content = UIFactory.CreateVerticalContainer(canvas.transform, 320f, 20f, 60f);
 
             UIFactory.CreateText(content, "魔法岛", 66, TextAnchor.MiddleCenter, UIFactory.Primary);
