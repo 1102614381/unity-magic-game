@@ -102,6 +102,53 @@ namespace MagicIsland.UI
             return card;
         }
 
+        /// <summary>
+        /// 竖排提示牌：图标在上、文字竖排在下，贴在界面最左边。
+        /// 适合低龄儿童——整块立在左侧，不遮挡中间玩法区。
+        /// </summary>
+        public static GameObject CreateVerticalHintCard(Transform parent, Sprite icon, string text,
+                                                        Color cardColor, Vector2 anchor, Vector2 position,
+                                                        float width = 150f, float height = 460f,
+                                                        float fontSize = 44f)
+        {
+            var card = new GameObject("VerticalHintCard", typeof(RectTransform), typeof(Image));
+            card.transform.SetParent(parent, false);
+            var bg = card.GetComponent<Image>();
+            bg.color = new Color(cardColor.r, cardColor.g, cardColor.b, 0.9f);
+            bg.raycastTarget = false;
+            var rt = card.GetComponent<RectTransform>();
+            rt.anchorMin = anchor;
+            rt.anchorMax = anchor;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(width, height);
+            rt.anchoredPosition = position;
+
+            // 顶部图标
+            if (icon != null)
+            {
+                CreateSpriteImage(card.transform, icon, 110f, 110f,
+                                  new Vector2(0.5f, 1f), new Vector2(0f, -78f), "VerticalHintIcon");
+            }
+
+            // 竖排文字（每字一行）
+            if (!string.IsNullOrEmpty(text))
+            {
+                var t = UIFactory.CreateText(card.transform, UIFactory.ToVertical(text), fontSize,
+                                             TextAnchor.UpperCenter, Color.white, false);
+                var trt = t.rectTransform;
+                trt.anchorMin = new Vector2(0f, 0f);
+                trt.anchorMax = new Vector2(1f, 1f);
+                trt.offsetMin = new Vector2(0f, 24f);
+                trt.offsetMax = new Vector2(0f, -160f);
+                t.lineSpacing = 1.15f;
+            }
+
+            var bob = card.AddComponent<KidBob>();
+            bob.amplitude = 6f;
+            bob.speed = 2f;
+            return card;
+        }
+
         // ---------- 语音 ----------
         private static object _speechSynth;
         private static MethodInfo _speakMethod;

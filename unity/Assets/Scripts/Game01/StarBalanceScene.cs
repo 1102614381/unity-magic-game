@@ -187,11 +187,12 @@ namespace MagicIsland.Game01
             titleRt.sizeDelta = new Vector2(400f, 66f);
             titleRt.anchoredPosition = new Vector2(0f, -104f);
 
-            // 提示卡：魔法棒图标 + 极短文字
+            // 竖排提示牌：魔法棒图标 + 竖排文字，立在界面最左边
             var wandIcon = KidVisualFactory.LoadSprite("wand_magic");
-            KidVisualFactory.CreateHintCard(canvas.transform, wandIcon, "飞到云朵上",
-                                            new Color(0.35f, 0.45f, 0.82f),
-                                            new Vector2(0.5f, 0f), new Vector2(0f, 52f), 620f, 120f);
+            KidVisualFactory.CreateVerticalHintCard(canvas.transform, wandIcon, "飞到云朵上",
+                                                    new Color(0.35f, 0.45f, 0.82f),
+                                                    new Vector2(0f, 0.5f), new Vector2(96f, -40f),
+                                                    150f, 470f, 44f);
 
             _holdCard = new GameObject("HoldBarBg", typeof(RectTransform), typeof(Image));
             _holdCard.transform.SetParent(canvas.transform, false);
@@ -218,8 +219,9 @@ namespace MagicIsland.Game01
             _holdFill.fillAmount = 0f;
             _holdCard.SetActive(false);
 
+            // 成功时旋转的星星：放在界面中央底部
             _medal = KidVisualFactory.CreateSpriteImage(canvas.transform, starIcon, 180f, 180f,
-                                                        new Vector2(0.5f, 0.72f), Vector2.zero, "Medal");
+                                                        new Vector2(0.5f, 0f), new Vector2(0f, 110f), "Medal");
             _medal.gameObject.AddComponent<KidSpin>().degreesPerSecond = 50f;
             _medal.gameObject.SetActive(false);
 
@@ -396,7 +398,7 @@ namespace MagicIsland.Game01
 
             _holdCard.SetActive(false);
             _medal.gameObject.SetActive(true);
-            _result.text = "睡得香！";
+            _result.text = "恭喜获得一颗星星！";
             if (enableVoice) KidVisualFactory.Speak("太棒啦！星星睡着啦！");
         }
 

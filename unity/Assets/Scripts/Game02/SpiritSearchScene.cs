@@ -253,21 +253,22 @@ namespace MagicIsland.Game02
             titleRt.sizeDelta = new Vector2(400f, 62f);
             titleRt.anchoredPosition = new Vector2(0f, -94f);
 
-            // 目标提示卡：目标精灵大图标 + 极短文字
-            var hint = KidVisualFactory.CreateHintCard(canvas.transform, null, "找它",
-                                                       KidVisualFactory.CandyBlue,
-                                                       new Vector2(0.5f, 0.88f), Vector2.zero, 440f, 150f);
+            // 竖排提示牌：目标精灵图标在上 + 竖排"找它"，立在界面最左边
+            var hint = KidVisualFactory.CreateVerticalHintCard(canvas.transform, null, "找它",
+                                                               KidVisualFactory.CandyBlue,
+                                                               new Vector2(0f, 0.5f), new Vector2(96f, -40f),
+                                                               150f, 470f, 46f);
             _targetIcon = KidVisualFactory.CreateSpriteImage(hint.transform, null, 110f, 110f,
-                                                             new Vector2(0f, 0.5f), new Vector2(-160f, 0f),
+                                                             new Vector2(0.5f, 1f), new Vector2(0f, -78f),
                                                              "TargetSpiritIcon");
 
             _prompt = UIFactory.CreateText(canvas.transform, string.Empty, 28, TextAnchor.MiddleCenter,
                                            Color.white, false);
             var promptRect = _prompt.rectTransform;
-            promptRect.anchorMin = new Vector2(0.5f, 0.88f);
-            promptRect.anchorMax = new Vector2(0.5f, 0.88f);
-            promptRect.sizeDelta = new Vector2(260f, 120f);
-            promptRect.anchoredPosition = new Vector2(90f, 0f);
+            promptRect.anchorMin = new Vector2(0f, 0.5f);
+            promptRect.anchorMax = new Vector2(0f, 0.5f);
+            promptRect.sizeDelta = new Vector2(200f, 200f);
+            promptRect.anchoredPosition = new Vector2(96f, -280f);
             _prompt.gameObject.SetActive(false);
 
             _feedback = UIFactory.CreateText(canvas.transform, string.Empty, 56, TextAnchor.MiddleCenter,
@@ -392,8 +393,8 @@ namespace MagicIsland.Game02
                         if (events != null)
                             events.Log(GameEvents.WrongTarget, targetId: facing.name, response: facing.name, isCorrect: false);
                         _feedback.color = KidVisualFactory.CandyYellow;
-                        _feedback.text = "？";
-                        if (enableVoice) KidVisualFactory.Speak("再找找看");
+                        _feedback.text = "不对哦，再找找看吧。";
+                        if (enableVoice) KidVisualFactory.Speak("不对哦，再找找看吧");
                     }
                 }
                 else

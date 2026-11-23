@@ -25,13 +25,31 @@ namespace MagicIsland.UI
             get
             {
                 if (_font != null) return _font;
-                try { _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); } catch { /* 旧版本 Unity */ }
+                // 统一使用圆润饱满的儿童字体（华文琥珀），适合低龄小朋友阅读
+                try { _font = Resources.Load<Font>("Fonts/KidFont"); } catch { }
                 if (_font == null)
                 {
-                    try { _font = Resources.GetBuiltinResource<Font>("Arial.ttf"); } catch { /* 新版本 Unity */ }
+                    try { _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); } catch { }
+                }
+                if (_font == null)
+                {
+                    try { _font = Resources.GetBuiltinResource<Font>("Arial.ttf"); } catch { }
                 }
                 return _font;
             }
+        }
+
+        /// <summary>把文字转成竖排（每字一行，从右往左读）。</summary>
+        public static string ToVertical(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text;
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (i > 0) sb.Append('\n');
+                sb.Append(text[i]);
+            }
+            return sb.ToString();
         }
 
         public static Canvas CreateCanvas(string name = "Canvas", bool withBackground = true)
