@@ -21,13 +21,18 @@ namespace MagicIsland.UI
         public static readonly Color CandyPurple = new Color(0.74f, 0.58f, 0.96f);
 
         // ---------- 资源加载 ----------
-        /// <summary>从 Resources/Art 加载精灵；不存在返回 null。</summary>
-        public static Sprite LoadSprite(string name)
+        /// <summary>
+        /// 从 Resources/Art 加载精灵；不存在返回 null。
+        /// pixelsPerUnit 默认取图片宽度，使每张图 ≈ 1 个世界单位（避免 1024px 图变成 10 单位撑爆场景）。
+        /// 需要精确控制大小时可显式传入。
+        /// </summary>
+        public static Sprite LoadSprite(string name, float pixelsPerUnit = 0f)
         {
             var tex = Resources.Load<Texture2D>("Art/" + name);
             if (tex == null) return null;
+            if (pixelsPerUnit <= 0f) pixelsPerUnit = tex.width;
             return Sprite.Create(tex, new Rect(0f, 0f, tex.width, tex.height),
-                                 new Vector2(0.5f, 0.5f), 100f);
+                                 new Vector2(0.5f, 0.5f), pixelsPerUnit);
         }
 
         /// <summary>创建一张 2D 图片（UI），带可选点击回调。</summary>

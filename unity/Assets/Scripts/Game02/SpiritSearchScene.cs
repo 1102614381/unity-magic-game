@@ -7,10 +7,9 @@ using UnityEngine.UI;
 namespace MagicIsland.Game02
 {
     /// <summary>
-    /// G2 寻找魔法精灵（阶段B 交互原型 V2.0 · 低龄儿童版）：
-    /// 判定与事件上报完全沿用 V1.1（Yaw 相对转向 + 角速度静止 + 保持确认）；
-    /// 视觉改为：彩虹云朵天空 + 可爱小精灵贴图染 6 色 + 漂浮动画 + 大图标 + 语音；
-    /// 去掉精灵头顶的文字标签（低龄儿童不识字，靠颜色识别）。
+    /// G2 寻找魔法精灵 V2.1（低龄儿童版）：
+    /// 判定/事件与 V1.1 完全一致；6 个精灵用项目自带蓝精灵衍生的六色图（spirit_*.png）。
+    /// 关键：LoadSprite 按图片宽度=1世界单位，精灵缩放 1.6 单位、半径 7 的圆周排布，互不遮挡。
     /// 场景里只需一个空物体挂本脚本。
     /// </summary>
     public class SpiritSearchScene : MonoBehaviour
@@ -27,17 +26,22 @@ namespace MagicIsland.Game02
         [SerializeField] private bool enableVoice = true;
         [SerializeField] private bool showDebugInEditor = true;
 
+        // 事件 targetId 沿用 V1.1 中文名（数据契约不变）
+        private readonly string[] _spiritNames = { "蓝精灵", "红精灵", "黄精灵", "绿精灵", "紫精灵", "橙精灵" };
+        private readonly string[] _spiritSprites =
+        {
+            "spirit_blue", "spirit_red", "spirit_yellow",
+            "spirit_green", "spirit_purple", "spirit_orange"
+        };
         private readonly Color[] _spiritColors =
         {
-            new Color(0.35f, 0.72f, 1.00f), // 蓝
-            new Color(1.00f, 0.45f, 0.45f), // 红
-            new Color(1.00f, 0.84f, 0.30f), // 黄
-            new Color(0.45f, 0.90f, 0.55f), // 绿
-            new Color(0.75f, 0.52f, 0.98f), // 紫
-            new Color(1.00f, 0.62f, 0.32f), // 橙
+            new Color(0.45f, 0.78f, 1.00f),
+            new Color(1.00f, 0.50f, 0.50f),
+            new Color(1.00f, 0.85f, 0.35f),
+            new Color(0.50f, 0.90f, 0.58f),
+            new Color(0.75f, 0.58f, 0.98f),
+            new Color(1.00f, 0.68f, 0.38f)
         };
-        // 事件 targetId 沿用 V1.1 的中文名（数据契约不变）；文字标签本身已移除，孩子只看颜色
-        private readonly string[] _spiritNames = { "蓝精灵", "红精灵", "黄精灵", "绿精灵", "紫精灵", "橙精灵" };
 
         private Transform _cameraT;
         private Transform[] _spirits;
@@ -62,12 +66,12 @@ namespace MagicIsland.Game02
         private bool _trialDone;
         private bool _allDone;
 
-        // 视觉动画用
         private float[] _spiritPhase;
         private Vector3[] _spiritBasePos;
         private float _targetGlow;
+        private const float SpiritScale = 1.6f;
 
-        private int TargetIndex => _trialIndex % _spiritColors.Length;
+        private int TargetIndex => _trialIndex % _spiritNames.Length;
 
         private void Start()
         {
@@ -87,22 +91,8 @@ namespace MagicIsland.Game02
             cam.transform.position = new Vector3(0f, 1.4f, 0f);
             cam.transform.rotation = Quaternion.identity;
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.86f, 0.93f, 1.00f);
+            cam.backgroundColor = new Color(0.86f, 0.94f, 1.00f);
             _cameraT = cam.transform;
-
-            // 彩虹云朵天空：用一张面向相机的平面贴在远处，随相机转
-            var skyTex = Resources.Load<Texture2D>("Art/bg_sky_clouds");
-            if (skyTex != null)
-            {
-                var skyGo = new GameObject("SkyBackdrop");
-                skyGo.transform.SetParent(_cameraT, false);
-                skyGo.transform.localPosition = new Vector3(0f, 0f, 60f);
-                var skySr = skyGo.AddComponent<SpriteRenderer>();
-                skySr.sprite = Sprite.Create(skyTex, new Rect(0f, 0f, skyTex.width, skyTex.height),
-                                             new Vector2(0.5f, 0.5f), 100f);
-                skySr.sortingOrder = -100;
-                skyGo.transform.localScale = Vector3.one * 12f;
-            }
 
             if (FindObjectOfType<Light>() == null)
             {
@@ -113,53 +103,45 @@ namespace MagicIsland.Game02
                 lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
             }
 
-            // 地面：柔和草地（俯视看不到多少，但给场景底部一点颜色）
+            // 地面：柔和浅绿 + 梦幻岛贴图（一张铺满）
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = "Ground";
-            ground.transform.localScale = new Vector3(4f, 1f, 4f);
-            var meadow = Resources.Load<Texture2D>("Art/bg_meadow");
-            var gm = MakeMat(meadow != null ? Color.white : new Color(0.78f, 0.92f, 0.70f));
-            if (meadow != null)
-            {
-                meadow.wrapMode = TextureWrapMode.Repeat;
-                gm.mainTexture = meadow;
-                gm.mainTextureScale = new Vector2(6f, 6f);
-            }
-            ground.GetComponent<Renderer>().material = gm;
+            ground.transform.localScale = new Vector3(3f, 1f, 3f);
             ground.transform.position = new Vector3(0f, -0.6f, 0f);
+            var island = Resources.Load<Texture2D>("Art/bg_island_map");
+            var gm = MakeMat(island != null ? Color.white : new Color(0.80f, 0.92f, 0.72f));
+            if (island != null) gm.mainTexture = island;
+            ground.GetComponent<Renderer>().material = gm;
 
-            // 精灵：可爱小精灵贴图染 6 色，去掉文字标签
-            var spiritSprite = KidVisualFactory.LoadSprite("character_spirit_white");
-            _spirits = new Transform[_spiritColors.Length];
-            _spiritPhase = new float[_spiritColors.Length];
-            _spiritBasePos = new Vector3[_spiritColors.Length];
+            // 背景用清爽天蓝（不做竖立背景板，避免转身看到边缘）；梦幻岛只作地面贴图
 
-            for (int i = 0; i < _spiritColors.Length; i++)
+            // 6 个精灵：用六色精灵图，半径 7 圆周排布，面朝圆心
+            _spirits = new Transform[_spiritNames.Length];
+            _spiritPhase = new float[_spiritNames.Length];
+            _spiritBasePos = new Vector3[_spiritNames.Length];
+
+            for (int i = 0; i < _spiritNames.Length; i++)
             {
-                float angle = i * 360f / _spiritColors.Length;
+                float angle = i * 360f / _spiritNames.Length;
                 var go = new GameObject("Spirit_" + _spiritNames[i]);
-                var pos = new Vector3(Mathf.Sin(angle * Mathf.Deg2Rad) * 7f, 1.0f,
+                var pos = new Vector3(Mathf.Sin(angle * Mathf.Deg2Rad) * 7f, 1.2f,
                                       Mathf.Cos(angle * Mathf.Deg2Rad) * 7f);
                 go.transform.position = pos;
                 _spiritBasePos[i] = pos;
                 _spiritPhase[i] = i * 0.8f;
 
-                if (spiritSprite != null)
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = KidVisualFactory.LoadSprite(_spiritSprites[i]);
+                sr.color = Color.white;
+                sr.sortingOrder = 10;
+                go.transform.localScale = Vector3.one * SpiritScale;
+                // Sprite 正面朝 -Z；让精灵面朝圆心（玩家在中心），这样看到正脸
+                go.transform.rotation = Quaternion.LookRotation(-pos.normalized, Vector3.up);
+
+                if (sr.sprite == null)
                 {
-                    var sr = go.AddComponent<SpriteRenderer>();
-                    sr.sprite = spiritSprite;
-                    sr.color = _spiritColors[i];
-                    sr.sortingOrder = 10;
-                    go.transform.localScale = Vector3.one * 2.2f;
-                    // 让精灵面朝圆心（玩家在中心，看到的是精灵正面）
-                    go.transform.rotation = Quaternion.LookRotation(-pos.normalized, Vector3.up);
-                }
-                else
-                {
-                    // 兜底：彩色胶囊
                     var cap = GameObject.CreatePrimitive(PrimitiveType.Capsule);
                     cap.transform.SetParent(go.transform, false);
-                    cap.transform.localScale = new Vector3(0.8f, 1.0f, 0.8f);
                     cap.GetComponent<Renderer>().material = MakeMat(_spiritColors[i]);
                 }
                 _spirits[i] = go.transform;
@@ -179,50 +161,46 @@ namespace MagicIsland.Game02
         {
             var canvas = UIFactory.CreateCanvas("Canvas_G2", false);
 
-            // 标题极简化
             var star = KidVisualFactory.LoadSprite("icon_star_medal");
-            KidVisualFactory.CreateSpriteImage(canvas.transform, star, 80f, 80f,
-                                               new Vector2(0.5f, 1f), new Vector2(0f, -64f), "TitleStar");
-            var title = UIFactory.CreateText(canvas.transform, "找精灵", 38, TextAnchor.UpperCenter,
+            KidVisualFactory.CreateSpriteImage(canvas.transform, star, 60f, 60f,
+                                               new Vector2(0.5f, 1f), new Vector2(0f, -50f), "TitleStar");
+            var title = UIFactory.CreateText(canvas.transform, "找精灵", 34, TextAnchor.UpperCenter,
                                              KidVisualFactory.CandyPurple, false);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = new Vector2(0.5f, 1f);
             titleRt.anchorMax = new Vector2(0.5f, 1f);
             titleRt.pivot = new Vector2(0.5f, 1f);
-            titleRt.sizeDelta = new Vector2(400f, 66f);
-            titleRt.anchoredPosition = new Vector2(0f, -112f);
+            titleRt.sizeDelta = new Vector2(400f, 62f);
+            titleRt.anchoredPosition = new Vector2(0f, -94f);
 
-            // 目标提示：一个大色块图标 + 极短文字"找它"
+            // 目标提示卡：目标精灵大图标 + 极短文字
             var hint = KidVisualFactory.CreateHintCard(canvas.transform, null, "找它",
                                                        KidVisualFactory.CandyBlue,
-                                                       new Vector2(0.5f, 0.86f), Vector2.zero, 420f, 110f);
-            _targetIcon = KidVisualFactory.CreateSpriteImage(hint.transform, null, 84f, 84f,
-                                                             new Vector2(0f, 0.5f), new Vector2(210f, 0f),
-                                                             "TargetColorIcon");
-            // 把图标放到卡片左侧（覆盖在默认位置之外）
-            _targetIcon.rectTransform.anchoredPosition = new Vector2(-170f, 0f);
+                                                       new Vector2(0.5f, 0.88f), Vector2.zero, 440f, 150f);
+            _targetIcon = KidVisualFactory.CreateSpriteImage(hint.transform, null, 110f, 110f,
+                                                             new Vector2(0f, 0.5f), new Vector2(-160f, 0f),
+                                                             "TargetSpiritIcon");
 
-            _prompt = UIFactory.CreateText(canvas.transform, string.Empty, 30, TextAnchor.MiddleCenter,
+            _prompt = UIFactory.CreateText(canvas.transform, string.Empty, 28, TextAnchor.MiddleCenter,
                                            Color.white, false);
             var promptRect = _prompt.rectTransform;
-            promptRect.anchorMin = new Vector2(0.5f, 0.86f);
-            promptRect.anchorMax = new Vector2(0.5f, 0.86f);
-            promptRect.sizeDelta = new Vector2(300f, 100f);
-            promptRect.anchoredPosition = new Vector2(60f, 0f);
-            _prompt.gameObject.SetActive(false); // 文字提示由语音+图标替代
+            promptRect.anchorMin = new Vector2(0.5f, 0.88f);
+            promptRect.anchorMax = new Vector2(0.5f, 0.88f);
+            promptRect.sizeDelta = new Vector2(260f, 120f);
+            promptRect.anchoredPosition = new Vector2(90f, 0f);
+            _prompt.gameObject.SetActive(false);
 
-            // 反馈：找到时的绿色卡片（对/错用颜色，不用长句）
-            _feedback = UIFactory.CreateText(canvas.transform, string.Empty, 60, TextAnchor.MiddleCenter,
+            _feedback = UIFactory.CreateText(canvas.transform, string.Empty, 56, TextAnchor.MiddleCenter,
                                              Color.white, false);
             var feedbackRect = _feedback.rectTransform;
-            feedbackRect.anchorMin = new Vector2(0.5f, 0.32f);
-            feedbackRect.anchorMax = new Vector2(0.5f, 0.32f);
+            feedbackRect.anchorMin = new Vector2(0.5f, 0.30f);
+            feedbackRect.anchorMax = new Vector2(0.5f, 0.30f);
             feedbackRect.sizeDelta = new Vector2(1000f, 100f);
 
             _successCard = KidVisualFactory.CreateHintCard(canvas.transform, star, "找到啦",
                                                            KidVisualFactory.CandyGreen,
                                                            new Vector2(0.5f, 0.5f), new Vector2(0f, -60f),
-                                                           520f, 150f);
+                                                           480f, 140f);
             _successCard.SetActive(false);
 
             _hud = UIFactory.CreateText(canvas.transform, string.Empty, 22, TextAnchor.LowerLeft,
@@ -259,12 +237,10 @@ namespace MagicIsland.Game02
             _keyYawOffset = 0f;
             _prevYawRel = 0f;
 
-            // 目标图标 = 该颜色的小精灵图（染成目标色），孩子看图就知道找谁
-            var spiritSprite = KidVisualFactory.LoadSprite("character_spirit_white");
             if (_targetIcon != null)
             {
-                _targetIcon.sprite = spiritSprite;
-                _targetIcon.color = _spiritColors[TargetIndex];
+                _targetIcon.sprite = KidVisualFactory.LoadSprite(_spiritSprites[TargetIndex]);
+                _targetIcon.color = Color.white;
             }
             _prompt.text = "找" + _spiritNames[TargetIndex];
             _feedback.text = string.Empty;
@@ -318,9 +294,8 @@ namespace MagicIsland.Game02
                             events.Log(GameEvents.HoldStart, targetId: target.name);
                         }
                     }
-                    // 对准后目标精灵放大发光（动画替代"对准了保持住"文字）
                     _targetGlow = Mathf.Lerp(_targetGlow, 1f, Time.deltaTime * 6f);
-                    target.localScale = Vector3.one * (2.2f + _targetGlow * 0.5f);
+                    target.localScale = Vector3.one * (SpiritScale + _targetGlow * 0.25f);
                     if (_alignedTimer >= alignedHoldSeconds * 2f) FoundTarget(target);
                 }
                 else if (facing != null && facing != target && still)
@@ -328,18 +303,14 @@ namespace MagicIsland.Game02
                     _alignedTimer = 0f;
                     _wrongTimer += Time.deltaTime;
                     _targetGlow = Mathf.Lerp(_targetGlow, 0f, Time.deltaTime * 6f);
-                    target.localScale = Vector3.one * (2.2f + _targetGlow * 0.5f);
+                    target.localScale = Vector3.one * (SpiritScale + _targetGlow * 0.25f);
                     if (_wrongTimer >= wrongAlignSeconds && Time.time >= _nextWrongAllowedTime)
                     {
                         _nextWrongAllowedTime = Time.time + 2.5f;
                         _wrongTimer = 0f;
                         _wrongTargetCount++;
                         if (events != null)
-                        {
-                            events.Log(GameEvents.WrongTarget, targetId: facing.name, response: facing.name,
-                                       isCorrect: false);
-                        }
-                        // 找错：轻微摇头动画 + 语音，不用文字
+                            events.Log(GameEvents.WrongTarget, targetId: facing.name, response: facing.name, isCorrect: false);
                         _feedback.color = KidVisualFactory.CandyYellow;
                         _feedback.text = "？";
                         if (enableVoice) KidVisualFactory.Speak("再找找看");
@@ -350,7 +321,7 @@ namespace MagicIsland.Game02
                     _alignedTimer = 0f;
                     _wrongTimer = 0f;
                     _targetGlow = Mathf.Lerp(_targetGlow, 0f, Time.deltaTime * 6f);
-                    target.localScale = Vector3.one * (2.2f + _targetGlow * 0.5f);
+                    target.localScale = Vector3.one * (SpiritScale + _targetGlow * 0.25f);
                 }
             }
 
@@ -362,7 +333,7 @@ namespace MagicIsland.Game02
             for (int i = 0; i < _spirits.Length; i++)
             {
                 if (_spirits[i] == null) continue;
-                float bob = Mathf.Sin(Time.time * 2f + _spiritPhase[i]) * 0.12f;
+                float bob = Mathf.Sin(Time.time * 2f + _spiritPhase[i]) * 0.14f;
                 _spirits[i].position = _spiritBasePos[i] + Vector3.up * bob;
             }
         }
@@ -376,16 +347,12 @@ namespace MagicIsland.Game02
                 if (Input.GetKey(KeyCode.D)) _keyYawOffset -= 70f * Time.deltaTime;
                 return Mathf.DeltaAngle(_yawRef, imu.Yaw) + _keyYawOffset;
             }
-
             if (Input.GetKey(KeyCode.A)) _yawRef += 60f * Time.deltaTime;
             if (Input.GetKey(KeyCode.D)) _yawRef -= 60f * Time.deltaTime;
             return Mathf.Repeat(-_yawRef + 180f, 360f) - 180f;
         }
 
-        private void ApplyCameraYaw(float yawRel)
-        {
-            _cameraT.rotation = Quaternion.Euler(0f, yawRel, 0f);
-        }
+        private void ApplyCameraYaw(float yawRel) { _cameraT.rotation = Quaternion.Euler(0f, yawRel, 0f); }
 
         private void UpdateAngularVelocity(float yawRel)
         {
@@ -400,7 +367,6 @@ namespace MagicIsland.Game02
             Vector3 fwd = _cameraT.forward;
             fwd.y = 0f;
             fwd.Normalize();
-
             Transform best = null;
             float bestAngle = 999f;
             foreach (var spirit in _spirits)
@@ -409,11 +375,7 @@ namespace MagicIsland.Game02
                 dir.y = 0f;
                 dir.Normalize();
                 float angle = Vector3.Angle(fwd, dir);
-                if (angle < bestAngle)
-                {
-                    bestAngle = angle;
-                    best = spirit;
-                }
+                if (angle < bestAngle) { bestAngle = angle; best = spirit; }
             }
             return bestAngle <= alignedDegrees ? best : null;
         }
@@ -428,7 +390,6 @@ namespace MagicIsland.Game02
         {
             _trialDone = true;
             float completionMs = (Time.realtimeSinceStartup - _trialStartTime) * 1000f;
-
             var events = GameEventManager.Instance;
             if (events != null)
             {
@@ -437,7 +398,6 @@ namespace MagicIsland.Game02
                 events.Log(GameEvents.TaskSuccess, targetId: name, isCorrect: true,
                            extra: $"trial={_trialIndex + 1}/{trialCount}");
             }
-
             TaskResultsWriter.Append(2, events != null ? events.TrialId : string.Empty, true, completionMs,
                                      targetId: target.name,
                                      wrongTargetCount: _wrongTargetCount.ToString(),
@@ -477,9 +437,6 @@ namespace MagicIsland.Game02
                         $"第 {_trialIndex + 1}/{trialCount} 轮  找错 {_wrongTargetCount} 次";
         }
 
-        private void OnDestroy()
-        {
-            KidVisualFactory.ShutdownSpeech();
-        }
+        private void OnDestroy() { KidVisualFactory.ShutdownSpeech(); }
     }
 }

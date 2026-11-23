@@ -7,10 +7,9 @@ using UnityEngine.UI;
 namespace MagicIsland.Game01
 {
     /// <summary>
-    /// G1 星星平衡岛（阶段B 交互原型 V2.0 · 低龄儿童版）：
-    /// 判定与事件上报完全沿用 V1.1（球体 + Rigidbody、XZ 平面滚动、进圈保持 2 秒）；
-    /// 视觉改为：花草地面 + 星星球贴图 + 发光星星目标圈 + 大图标提示 + 语音；
-    /// HUD 只剩极简图形提示，debug 数值仅在编辑器显示。
+    /// G1 星星平衡岛 V2.1（低龄儿童版）：
+    /// 判定/事件与 V1.1 完全一致；视觉改用项目自带美术图（梦幻岛地面/星星球/蘑菇/兔子/魔法棒）。
+    /// 关键：LoadSprite 默认按图片宽度=1世界单位，精灵缩放控制在 1~2 单位，不再撑满屏幕。
     /// 场景里只需一个空物体挂本脚本。
     /// </summary>
     public class StarBalanceScene : MonoBehaviour
@@ -31,9 +30,7 @@ namespace MagicIsland.Game01
         [SerializeField] private float keyboardAssistDegrees = 25f;
 
         [Header("低龄儿童版选项")]
-        [Tooltip("关闭语音时仅保留图形与动画提示")]
         [SerializeField] private bool enableVoice = true;
-        [Tooltip("编辑器里显示 debug 数值（roll/pitch等），打包后自动隐藏")]
         [SerializeField] private bool showDebugInEditor = true;
 
         private Rigidbody _ball;
@@ -76,29 +73,28 @@ namespace MagicIsland.Game01
             cam.transform.rotation = Quaternion.Euler(88f, 0f, 0f);
             cam.farClipPlane = 200f;
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.84f, 0.95f, 0.98f);
+            cam.backgroundColor = new Color(0.80f, 0.90f, 1.00f);
 
             if (FindObjectOfType<Light>() == null)
             {
                 var lightGo = new GameObject("Directional Light");
                 var light = lightGo.AddComponent<Light>();
                 light.type = LightType.Directional;
-                light.intensity = 1.15f;
+                light.intensity = 1.1f;
                 lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
             }
 
-            // 地面：先建物理平面，再贴花草图（贴图缺失时回退浅绿纯色）
+            // 地面：梦幻岛屿地图贴图（项目自带 bg_island_map），一张铺满，不平铺密纹
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.name = "Ground";
             ground.transform.localScale = new Vector3(2f, 1f, 2f); // 20 x 20
             var groundRenderer = ground.GetComponent<Renderer>();
-            var meadowTex = Resources.Load<Texture2D>("Art/bg_meadow");
-            if (meadowTex != null)
+            var islandTex = Resources.Load<Texture2D>("Art/bg_island_map");
+            if (islandTex != null)
             {
-                meadowTex.wrapMode = TextureWrapMode.Repeat;
                 var groundMat = MakeMat(Color.white);
-                groundMat.mainTexture = meadowTex;
-                groundMat.mainTextureScale = new Vector2(4f, 4f);
+                groundMat.mainTexture = islandTex;
+                groundMat.mainTextureScale = new Vector2(1f, 1f);
                 groundRenderer.material = groundMat;
             }
             else
@@ -106,12 +102,12 @@ namespace MagicIsland.Game01
                 groundRenderer.material = MakeMat(new Color(0.78f, 0.92f, 0.70f));
             }
 
-            // 球：保留 Rigidbody 做物理，渲染换成星星球精灵（俯视相机看得见）
+            // 球：保留物理球体（不可见），视觉用项目自带星星球贴图，直径约 1.4 世界单位
             var ballGo = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             ballGo.name = "StarBall";
             ballGo.transform.position = new Vector3(0f, 0.5f, 0f);
             ballGo.transform.localScale = Vector3.one;
-            ballGo.GetComponent<Renderer>().enabled = false; // 隐藏纯色球
+            ballGo.GetComponent<Renderer>().enabled = false;
             _ball = ballGo.AddComponent<Rigidbody>();
             _ball.mass = 1f;
             _ball.drag = 2.6f;
@@ -122,20 +118,19 @@ namespace MagicIsland.Game01
             var ballVisualGo = new GameObject("StarBallVisual");
             ballVisualGo.transform.SetParent(ballGo.transform, false);
             ballVisualGo.transform.localPosition = new Vector3(0f, 0.05f, 0f);
-            ballVisualGo.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f); // 平躺在 XZ 平面朝上
-            ballVisualGo.transform.localScale = Vector3.one * 1.5f;
+            ballVisualGo.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f); // 平躺朝上
+            ballVisualGo.transform.localScale = Vector3.one * 1.4f; // ≈1.4 单位
             var ballSr = ballVisualGo.AddComponent<SpriteRenderer>();
             ballSr.sprite = starSprite;
             ballSr.sortingOrder = 10;
             if (starSprite == null)
             {
-                // 兜底：画一个黄色圆
                 ballGo.GetComponent<Renderer>().enabled = true;
                 ballGo.GetComponent<Renderer>().material = MakeMat(KidVisualFactory.CandyYellow);
             }
             _ballVisual = ballVisualGo.transform;
 
-            // 目标：判定用隐形圆柱（沿用原逻辑），视觉用发光星星贴片
+            // 目标：判定圆柱沿用；视觉用程序生成的发光圆环，直径=targetRadius*2 精确对齐判定圈
             var ringGo = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             ringGo.name = "TargetRing";
             Destroy(ringGo.GetComponent<Collider>());
@@ -147,40 +142,41 @@ namespace MagicIsland.Game01
             ringVisualGo.transform.SetParent(ringGo.transform, false);
             ringVisualGo.transform.localPosition = new Vector3(0f, 0.06f, 0f);
             ringVisualGo.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
-            ringVisualGo.transform.localScale = Vector3.one * 1.25f;
+            // 圆环贴图 ppu=256 → 1 张图=1单位；缩放到判定圈直径
+            ringVisualGo.transform.localScale = Vector3.one * (targetRadius * 2f);
             var ringSr = ringVisualGo.AddComponent<SpriteRenderer>();
             ringSr.sprite = MakeGlowRingSprite(256);
             ringSr.color = KidVisualFactory.CandyYellow;
             ringSr.sortingOrder = 5;
-            ringVisualGo.AddComponent<KidSpin>().degreesPerSecond = 18f;
+            ringVisualGo.AddComponent<KidSpin>().degreesPerSecond = 15f;
             _ringVisual = ringVisualGo.transform;
 
-            // 场景装饰：四角蘑菇（用现有贴图，若缺失则用彩色小球代替）
-            AddDecoration(new Vector3(-7f, 0f, -7f), "prop_mushrooms", KidVisualFactory.CandyPink);
-            AddDecoration(new Vector3(7f, 0f, -7f), "prop_mushrooms", KidVisualFactory.CandyPurple);
-            AddDecoration(new Vector3(-7f, 0f, 7f), "prop_mushrooms", KidVisualFactory.CandyBlue);
-            AddDecoration(new Vector3(7f, 0f, 7f), "prop_mushrooms", KidVisualFactory.CandyGreen);
+            // 场景装饰：项目自带的蘑菇/兔子/魔法棒，尺寸 1.2~1.5 单位，放四角不遮挡玩法
+            AddFlatSprite(new Vector3(-7f, 0f, -7f), "prop_mushrooms", 1.5f, KidVisualFactory.CandyPink);
+            AddFlatSprite(new Vector3(7f, 0f, -7f), "character_bunny", 1.3f, Color.white);
+            AddFlatSprite(new Vector3(-7f, 0f, 7f), "wand_magic", 1.2f, Color.white);
+            AddFlatSprite(new Vector3(7f, 0f, 7f), "prop_mushrooms", 1.5f, KidVisualFactory.CandyGreen);
         }
 
-        private void AddDecoration(Vector3 pos, string spriteName, Color fallbackColor)
+        private void AddFlatSprite(Vector3 pos, string spriteName, float size, Color fallback)
         {
             var go = new GameObject("Deco_" + spriteName);
             go.transform.position = pos + Vector3.up * 0.02f;
             go.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
-            go.transform.localScale = Vector3.one * 1.6f;
+            go.transform.localScale = Vector3.one * size;
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = KidVisualFactory.LoadSprite(spriteName);
-            sr.color = sr.sprite != null ? Color.white : fallbackColor;
+            sr.color = sr.sprite != null ? Color.white : fallback;
             sr.sortingOrder = 3;
         }
 
-        /// <summary>程序生成一个柔和发光圆环精灵（无外部依赖）。</summary>
+        /// <summary>程序生成一个柔和发光圆环精灵（256px，ppu=256 → 1 世界单位）。</summary>
         private static Sprite MakeGlowRingSprite(int size)
         {
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
             var pixels = new Color[size * size];
             float c = (size - 1) * 0.5f;
-            float inner = size * 0.30f, outer = size * 0.46f;
+            float inner = size * 0.36f, outer = size * 0.49f;
             for (int y = 0; y < size; y++)
             {
                 for (int x = 0; x < size; x++)
@@ -191,14 +187,14 @@ namespace MagicIsland.Game01
                     else
                     {
                         float mid = (inner + outer) * 0.5f;
-                        a = 1f - Mathf.Abs(d - mid) / (outer - inner) * 0.7f;
+                        a = 1f - Mathf.Abs(d - mid) / (outer - inner) * 0.65f;
                     }
                     pixels[y * size + x] = new Color(1f, 1f, 1f, Mathf.Clamp01(a));
                 }
             }
             tex.SetPixels(pixels);
             tex.Apply();
-            return Sprite.Create(tex, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), 100f);
+            return Sprite.Create(tex, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f), size);
         }
 
         private static Material MakeMat(Color color)
@@ -214,25 +210,24 @@ namespace MagicIsland.Game01
         {
             var canvas = UIFactory.CreateCanvas("Canvas_G1", false);
 
-            // 极简标题：只留一个图标 + 2 个字（低龄儿童读得的字尽量少）
             var starIcon = KidVisualFactory.LoadSprite("icon_star_medal");
-            KidVisualFactory.CreateSpriteImage(canvas.transform, starIcon, 90f, 90f,
-                                               new Vector2(0.5f, 1f), new Vector2(0f, -70f), "TitleStar");
-            var title = UIFactory.CreateText(canvas.transform, "星星岛", 40, TextAnchor.UpperCenter,
+            KidVisualFactory.CreateSpriteImage(canvas.transform, starIcon, 70f, 70f,
+                                               new Vector2(0.5f, 1f), new Vector2(0f, -56f), "TitleStar");
+            var title = UIFactory.CreateText(canvas.transform, "星星岛", 38, TextAnchor.UpperCenter,
                                              KidVisualFactory.CandyPurple, false);
             var titleRt = title.rectTransform;
             titleRt.anchorMin = new Vector2(0.5f, 1f);
             titleRt.anchorMax = new Vector2(0.5f, 1f);
             titleRt.pivot = new Vector2(0.5f, 1f);
-            titleRt.sizeDelta = new Vector2(400f, 70f);
-            titleRt.anchoredPosition = new Vector2(0f, -125f);
+            titleRt.sizeDelta = new Vector2(400f, 66f);
+            titleRt.anchoredPosition = new Vector2(0f, -104f);
 
-            // 大图标提示条：星星 + 圈圈图案，配极短文字"滚进圈圈"
-            KidVisualFactory.CreateHintCard(canvas.transform, starIcon, "滚进圈圈",
+            // 提示卡：魔法棒图标 + 极短文字
+            var wandIcon = KidVisualFactory.LoadSprite("wand_magic");
+            KidVisualFactory.CreateHintCard(canvas.transform, wandIcon, "滚进圈圈",
                                             KidVisualFactory.CandyPurple,
-                                            new Vector2(0.5f, 0f), new Vector2(0f, 58f), 680f, 130f);
+                                            new Vector2(0.5f, 0f), new Vector2(0f, 52f), 620f, 120f);
 
-            // 保持进度条：进入圈圈后出现，用"填满"代替"保持 2 秒"的文字
             _holdCard = new GameObject("HoldBarBg", typeof(RectTransform), typeof(Image));
             _holdCard.transform.SetParent(canvas.transform, false);
             var holdBg = _holdCard.GetComponent<Image>();
@@ -241,8 +236,8 @@ namespace MagicIsland.Game01
             var hbRt = _holdCard.GetComponent<RectTransform>();
             hbRt.anchorMin = new Vector2(0.5f, 0.5f);
             hbRt.anchorMax = new Vector2(0.5f, 0.5f);
-            hbRt.sizeDelta = new Vector2(420f, 34f);
-            hbRt.anchoredPosition = new Vector2(0f, -190f);
+            hbRt.sizeDelta = new Vector2(360f, 30f);
+            hbRt.anchoredPosition = new Vector2(0f, -170f);
             var fillGo = new GameObject("HoldBarFill", typeof(RectTransform), typeof(Image));
             fillGo.transform.SetParent(_holdCard.transform, false);
             _holdFill = fillGo.GetComponent<Image>();
@@ -258,13 +253,12 @@ namespace MagicIsland.Game01
             _holdFill.fillAmount = 0f;
             _holdCard.SetActive(false);
 
-            // 成功/结果：大星星 + 短文字
-            _medal = KidVisualFactory.CreateSpriteImage(canvas.transform, starIcon, 260f, 260f,
+            _medal = KidVisualFactory.CreateSpriteImage(canvas.transform, starIcon, 180f, 180f,
                                                         new Vector2(0.5f, 0.72f), Vector2.zero, "Medal");
-            _medal.gameObject.AddComponent<KidSpin>().degreesPerSecond = 60f;
+            _medal.gameObject.AddComponent<KidSpin>().degreesPerSecond = 50f;
             _medal.gameObject.SetActive(false);
 
-            _result = UIFactory.CreateText(canvas.transform, string.Empty, 72, TextAnchor.MiddleCenter,
+            _result = UIFactory.CreateText(canvas.transform, string.Empty, 64, TextAnchor.MiddleCenter,
                                            Color.white, false);
             var resultRect = _result.rectTransform;
             resultRect.anchorMin = new Vector2(0.5f, 0.56f);
@@ -272,7 +266,6 @@ namespace MagicIsland.Game01
             resultRect.pivot = new Vector2(0.5f, 0.5f);
             resultRect.sizeDelta = new Vector2(1200f, 120f);
 
-            // debug：仅编辑器可见，打包后不显示
             _hud = UIFactory.CreateText(canvas.transform, string.Empty, 22, TextAnchor.LowerLeft,
                                         new Color(0.3f, 0.3f, 0.3f, 0.6f), false);
             var hudRect = _hud.rectTransform;
@@ -330,19 +323,15 @@ namespace MagicIsland.Game01
                 if (_ball != null && _trialDone) _ball.velocity = Vector3.zero;
                 return;
             }
-
             Vector3 force = ReadForce();
             _ball.AddForce(force);
             if (_ball.velocity.magnitude > maxSpeed)
-            {
                 _ball.velocity = _ball.velocity.normalized * maxSpeed;
-            }
         }
 
         private Vector3 ReadForce()
         {
             Vector3 force = Vector3.zero;
-
             var imu = IMUReceiver.Instance;
             if (imu != null && imu.IsConnected)
             {
@@ -350,14 +339,12 @@ namespace MagicIsland.Game01
                 float pitch = invertPitchForce ? -imu.Pitch : imu.Pitch;
                 force += new Vector3(roll, 0f, pitch) * forceScale;
             }
-
             float x = 0f, z = 0f;
             if (Input.GetKey(KeyCode.D)) x += 1f;
             if (Input.GetKey(KeyCode.A)) x -= 1f;
             if (Input.GetKey(KeyCode.W)) z += 1f;
             if (Input.GetKey(KeyCode.S)) z -= 1f;
             force += new Vector3(x, 0f, z) * (keyboardAssistDegrees * forceScale);
-
             return force;
         }
 
@@ -371,7 +358,6 @@ namespace MagicIsland.Game01
                 GameManager.Instance.GoToMainMenu();
                 return;
             }
-
             if (_ball == null) return;
 
             var events = GameEventManager.Instance;
@@ -403,31 +389,27 @@ namespace MagicIsland.Game01
                 if (_holdTimer >= holdSeconds) Success();
             }
 
-            // 目标圈：靠近时变大发光，给低龄儿童"找得到"的视觉反馈
             float dist = Vector2.Distance(ballPos, ringPos);
-            float pulse = 1f + Mathf.Sin(Time.time * 5f) * 0.06f;
+            float pulse = 1f + Mathf.Sin(Time.time * 5f) * 0.05f;
             float near = Mathf.Clamp01(1f - dist / 6f);
-            _ringVisual.localScale = Vector3.one * (1.25f * pulse + near * 0.25f);
+            _ringVisual.localScale = Vector3.one * (targetRadius * 2f * pulse + near * 0.2f);
 
-            // 星星球轻微上下浮动（视觉层，不影响物理位置与判定）
             if (_ballVisual != null)
-                _ballVisual.localPosition = new Vector3(0f, 0.05f + Mathf.Sin(Time.time * 4f) * 0.03f, 0f);
+                _ballVisual.localPosition = new Vector3(0f, 0.05f + Mathf.Sin(Time.time * 4f) * 0.02f, 0f);
 
             if (_trialDone)
             {
                 _celebrateTimer += Time.deltaTime;
                 if (_medal != null && _medal.gameObject.activeSelf)
                 {
-                    float s = 1f + Mathf.Sin(_celebrateTimer * 8f) * 0.12f;
+                    float s = 1f + Mathf.Sin(_celebrateTimer * 8f) * 0.1f;
                     _medal.rectTransform.localScale = Vector3.one * s;
                 }
             }
 
             UpdateHud();
             if (_trialDone && !_allDone && (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return)))
-            {
                 NextTrial();
-            }
         }
 
         private void Success()
@@ -435,7 +417,6 @@ namespace MagicIsland.Game01
             _trialDone = true;
             _inTarget = false;
             float completionMs = (Time.realtimeSinceStartup - _trialStartTime) * 1000f;
-
             var events = GameEventManager.Instance;
             if (events != null)
             {
@@ -444,7 +425,6 @@ namespace MagicIsland.Game01
                 events.Log(GameEvents.TaskSuccess, isCorrect: true,
                            extra: $"trial={_trialIndex + 1}/{trialCount}");
             }
-
             TaskResultsWriter.Append(1, events != null ? events.TrialId : string.Empty, true, completionMs,
                                      (holdSeconds * 1000f).ToString("0"),
                                      _outOfTargetCount.ToString(),
@@ -481,9 +461,6 @@ namespace MagicIsland.Game01
                         $"保持 {_holdTimer:0.0}/{holdSeconds:0}";
         }
 
-        private void OnDestroy()
-        {
-            KidVisualFactory.ShutdownSpeech();
-        }
+        private void OnDestroy() { KidVisualFactory.ShutdownSpeech(); }
     }
 }
