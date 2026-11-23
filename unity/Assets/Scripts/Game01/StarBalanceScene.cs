@@ -122,7 +122,7 @@ namespace MagicIsland.Game01
             var ballVisualGo = new GameObject("StarBallVisual");
             ballVisualGo.transform.SetParent(ballGo.transform, false);
             ballVisualGo.transform.localPosition = new Vector3(0f, 0.05f, 0f);
-            ballVisualGo.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // 平躺在 XZ 平面朝上
+            ballVisualGo.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f); // 平躺在 XZ 平面朝上
             ballVisualGo.transform.localScale = Vector3.one * 1.5f;
             var ballSr = ballVisualGo.AddComponent<SpriteRenderer>();
             ballSr.sprite = starSprite;
@@ -146,7 +146,7 @@ namespace MagicIsland.Game01
             var ringVisualGo = new GameObject("TargetRingVisual");
             ringVisualGo.transform.SetParent(ringGo.transform, false);
             ringVisualGo.transform.localPosition = new Vector3(0f, 0.06f, 0f);
-            ringVisualGo.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            ringVisualGo.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
             ringVisualGo.transform.localScale = Vector3.one * 1.25f;
             var ringSr = ringVisualGo.AddComponent<SpriteRenderer>();
             ringSr.sprite = MakeGlowRingSprite(256);
@@ -166,7 +166,7 @@ namespace MagicIsland.Game01
         {
             var go = new GameObject("Deco_" + spriteName);
             go.transform.position = pos + Vector3.up * 0.02f;
-            go.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            go.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
             go.transform.localScale = Vector3.one * 1.6f;
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = KidVisualFactory.LoadSprite(spriteName);
